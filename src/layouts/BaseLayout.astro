@@ -1,0 +1,112 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  canonical?: string;
+  noIndex?: boolean;
+}
+
+const {
+  title,
+  description = 'DecayFix by SprintLabs.ai connects to Google Search Console, pinpoints decaying blog posts with 20%+ traffic drops, and provides AI action plans to revive lost Google traffic.',
+  canonical = Astro.url.href,
+  noIndex = false,
+} = Astro.props;
+
+const siteName = 'DecayFix by SprintLabs.ai';
+const fullTitle = title.includes('DecayFix') ? title : `${title} | ${siteName}`;
+---
+
+<!doctype html>
+<html lang="en" class="scroll-smooth bg-slate-950 text-slate-100">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- SEO Meta Tags -->
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noIndex && <meta name="robots" content="noindex, nofollow" />}
+
+    <!-- Open Graph / Social -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:site_name" content={siteName} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+  </head>
+  <body class="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
+    <!-- Top Navigation -->
+    <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-40">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <!-- Logo with SprintLabs.ai Parent Branding -->
+        <a href="/" class="flex items-center gap-3 group">
+          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-sky-400 flex items-center justify-center font-black text-white text-lg shadow-sm group-hover:scale-105 transition-transform">
+            ⚡
+          </div>
+          <div class="flex flex-col">
+            <div class="flex items-center gap-1.5">
+              <span class="font-extrabold text-lg tracking-tight text-white">
+                Decay<span class="text-sky-400">Fix</span>
+              </span>
+            </div>
+            <span class="text-[10px] font-medium text-slate-400 -mt-1 tracking-wider uppercase flex items-center gap-1">
+              by <span class="text-sky-400 font-semibold lowercase">sprintlabs.ai</span>
+            </span>
+          </div>
+        </a>
+
+        <nav class="flex items-center gap-6 text-sm font-medium text-slate-300">
+          <a href="/pricing" class="hover:text-white transition-colors">Pricing</a>
+          <a href="/login" class="text-slate-300 hover:text-white transition-colors">Sign In</a>
+          <a
+            href="/login"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/20 transition-all hover:scale-[1.02]"
+          >
+            <span>Connect Search Console</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main Content Slot -->
+    <main class="flex-grow">
+      <slot />
+    </main>
+
+    <!-- Global Footer with SprintLabs.ai Parent Branding -->
+    <footer class="border-t border-slate-800/80 bg-slate-950 py-12 text-sm text-slate-400">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div class="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-slate-200">DecayFix</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">
+              by <a href="https://sprintlabs.ai" target="_blank" rel="noopener noreferrer" class="text-sky-400 font-semibold hover:underline">sprintlabs.ai</a>
+            </span>
+          </div>
+          <span class="hidden sm:inline text-slate-600">•</span>
+          <span class="text-xs text-slate-400">Accelerated Intelligence for Continuous Search Traffic Optimization</span>
+        </div>
+        
+        <div class="flex items-center gap-6 text-xs">
+          <a href="/pricing" class="hover:text-slate-200 transition-colors">Pricing</a>
+          <a href="/privacy" class="hover:text-slate-200 transition-colors">Privacy Policy</a>
+          <a href="/terms" class="hover:text-slate-200 transition-colors">Terms of Service</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

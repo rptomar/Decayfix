@@ -1,0 +1,63 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import BillingView from '@/components/billing/BillingView';
+import { getSession } from '@/lib/session';
+import { db, purchases } from '@/db';
+import { eq, desc } from 'drizzle-orm';
+import { checkSiteUnlockStatus } from '@/lib/entitlement';
+
+export const prerender = false;
+
+const session = await getSession(Astro.request);
+if (!session?.user?.id) {
+  return Astro.redirect('/login');
+}
+
+const userId = session.user.id;
+
+// Fetch entitlement & purchases
+const entitlement = await checkSiteUnlockStatus(userId);
+
+let userPurchases: Array<{
+  id: string;
+  amount: number;
+  currency: string;
+  razorpayPaymentId: string | null;
+  status: string;
+  unlockedAt: string;
+}> = [];
+
+if (db) {
+  try {
+    const list = await db
+      .select()
+      .from(purchases)
+      .where(eq(purchases.userId, userId))
+      .orderBy(desc(purchases.unlockedAt));
+
+    userPurchases = list.map((p) => ({
+      id: p.id,
+      amount: p.amount,
+      currency: p.currency,
+      razorpayPaymentId: p.razorpayPaymentId,
+      status: p.status,
+      unlockedAt: p.unlockedAt.toISOString(),
+    }));
+  } catch (err) {
+    console.error('Error fetching user purchases:', err);
+  }
+}
+
+const razorpayKeyId = process.env.PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID || 'rzp_test_dummy';
+---
+
+<BaseLayout title="Billing & Receipts — DecayFix" noIndex={true}>
+  <BillingView
+    client:load
+    isUnlocked={entitlement.isUnlocked}
+    purchases={userPurchases}
+    razorpayKeyId={razorpayKeyId}
+    userEmail={session.user.email}
+    userName={session.user.name}
+  />
+</BaseLayout>

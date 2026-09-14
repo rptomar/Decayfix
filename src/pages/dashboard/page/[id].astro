@@ -1,0 +1,92 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageDetail from '@/components/dashboard/PageDetail';
+import { getSession } from '@/lib/session';
+import { db, pages, sites } from '@/db';
+import { eq, and, desc } from 'drizzle-orm';
+import { checkSiteUnlockStatus } from '@/lib/entitlement';
+import { extractTitleFromUrl } from '@/lib/analyzer';
+import { FREE_TIER_PAGE_LIMIT } from '@/lib/constants';
+
+export const prerender = false;
+
+const session = await getSession(Astro.request);
+if (!session?.user?.id) {
+  return Astro.redirect('/login');
+}
+
+const userId = session.user.id;
+const { id } = Astro.params;
+const targetUrl = id ? decodeURIComponent(id) : '';
+
+if (!targetUrl) {
+  return Astro.redirect('/dashboard');
+}
+
+// Check entitlement
+const entitlement = await checkSiteUnlockStatus(userId);
+
+let pageData = {
+  url: targetUrl,
+  title: extractTitleFromUrl(targetUrl),
+  baselineClicks: 380,
+  baselineImpressions: 8900,
+  recentClicks: 120,
+  recentImpressions: 3400,
+  dropPercentClicks: 68.4,
+  dropPercentImpressions: 61.8,
+  severityScore: 320,
+  aiSuggestion: 'Audit competing top 3 ranking articles to identify newly covered subtopics, update all dates/screenshots to the current year, and rewrite the introductory hook. Refresh the meta title and H1 tag with high-CTR power words.',
+  isFlagged: true,
+  isLocked: false,
+};
+
+if (db) {
+  try {
+    // Find page in DB
+    const found = await db.select().from(pages).where(eq(pages.url, targetUrl)).limit(1);
+    if (found.length > 0) {
+      const p = found[0];
+      // Get rank order among flagged pages for this site
+      const allFlagged = await db
+        .select()
+        .from(pages)
+        .where(and(eq(pages.siteId, p.siteId), eq(pages.isFlagged, true)))
+        .orderBy(desc(pages.severityScore));
+
+      const pageIndex = allFlagged.findIndex((item) => item.id === p.id);
+      const isLocked = !entitlement.isUnlocked && pageIndex >= FREE_TIER_PAGE_LIMIT;
+
+      pageData = {
+        url: p.url,
+        title: p.title || extractTitleFromUrl(p.url),
+        baselineClicks: p.baselineClicks,
+        baselineImpressions: p.baselineImpressions,
+        recentClicks: p.recentClicks,
+        recentImpressions: p.recentImpressions,
+        dropPercentClicks: Number(p.dropPercentClicks),
+        dropPercentImpressions: Number(p.dropPercentImpressions),
+        severityScore: Number(p.severityScore),
+        aiSuggestion: isLocked ? null : p.aiSuggestion,
+        isFlagged: p.isFlagged,
+        isLocked,
+      };
+    }
+  } catch (err) {
+    console.error('Error fetching page detail:', err);
+  }
+}
+
+const razorpayKeyId = process.env.PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID || 'rzp_test_dummy';
+---
+
+<BaseLayout title={`${pageData.title} — Decay Analysis`} noIndex={true}>
+  <PageDetail
+    client:load
+    pageData={pageData}
+    isUnlocked={entitlement.isUnlocked}
+    razorpayKeyId={razorpayKeyId}
+    userEmail={session.user.email}
+    userName={session.user.name}
+  />
+</BaseLayout>

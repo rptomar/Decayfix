@@ -1,0 +1,47 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import DashboardApp from '@/components/dashboard/DashboardApp';
+import { getSession } from '@/lib/session';
+import { db, sites } from '@/db';
+import { eq } from 'drizzle-orm';
+import { checkSiteUnlockStatus } from '@/lib/entitlement';
+
+export const prerender = false;
+
+const session = await getSession(Astro.request);
+if (!session?.user?.id) {
+  return Astro.redirect('/login');
+}
+
+const userId = session.user.id;
+
+// Fetch sites from DB
+let userSites: Array<{ id: string; siteUrl: string; lastSyncedAt: string | null }> = [];
+if (db) {
+  const dbSites = await db.select().from(sites).where(eq(sites.userId, userId));
+  userSites = dbSites.map((s) => ({
+    id: s.id,
+    siteUrl: s.siteUrl,
+    lastSyncedAt: s.lastSyncedAt ? s.lastSyncedAt.toISOString() : null,
+  }));
+}
+
+// Check entitlement
+const entitlement = await checkSiteUnlockStatus(userId);
+const razorpayKeyId = process.env.PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID || 'rzp_test_dummy';
+---
+
+<BaseLayout title="Dashboard — Content Decay Audit" noIndex={true}>
+  <DashboardApp
+    client:load
+    user={{
+      id: userId,
+      name: session.user.name,
+      email: session.user.email,
+      image: session.user.image,
+    }}
+    initialSites={userSites}
+    isUnlocked={entitlement.isUnlocked}
+    razorpayKeyId={razorpayKeyId}
+  />
+</BaseLayout>

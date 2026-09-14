@@ -1,0 +1,47 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Privacy Policy"
+  description="DecayFix privacy policy detailing our data handling practices and Google Search Console read-only access."
+>
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 py-20">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-white mb-8">Privacy Policy</h1>
+    
+    <div class="prose prose-invert prose-slate max-w-none text-slate-300 space-y-6 text-sm sm:text-base leading-relaxed">
+      <p class="text-slate-400">Last updated: September 12, 2026</p>
+
+      <h2 class="text-xl font-bold text-white mt-8 mb-4">1. Overview</h2>
+      <p>
+        DecayFix ("we", "our", or "us") provides a search performance diagnostic tool for blog owners. This policy explains what information we collect when you sign in with Google and how it is used.
+      </p>
+
+      <h2 class="text-xl font-bold text-white mt-8 mb-4">2. Google API Data & Permissions</h2>
+      <p>
+        When connecting your Google account, we request the <code class="text-xs text-sky-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">https://www.googleapis.com/auth/webmasters.readonly</code> scope. This is strictly read-only permission.
+      </p>
+      <ul class="list-disc pl-6 space-y-2 text-slate-300">
+        <li>We only fetch aggregate click and impression metrics for verified URLs on your domain.</li>
+        <li>We never modify your Google Search Console settings or sitemaps.</li>
+        <li>We do not sell, rent, or transfer your Google Search Console data to any third-party marketing brokers.</li>
+        <li>OAuth refresh tokens are encrypted at rest on our secure servers.</li>
+      </ul>
+
+      <h2 class="text-xl font-bold text-white mt-8 mb-4">3. AI Suggestions & Data Processing</h2>
+      <p>
+        To generate content refresh suggestions, we send the URL, public post title, and statistical traffic drop percentage to Anthropic's Claude API. No personal identifiers are transmitted in this request.
+      </p>
+
+      <h2 class="text-xl font-bold text-white mt-8 mb-4">4. Payment Information</h2>
+      <p>
+        Payment processing is handled securely via Razorpay. We do not store or process credit card numbers or banking credentials on our servers.
+      </p>
+
+      <h2 class="text-xl font-bold text-white mt-8 mb-4">5. Account Deletion & Data Revocation</h2>
+      <p>
+        You can revoke DecayFix's access at any time through your Google Security Settings (<a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" class="text-sky-400 underline">Google Account Permissions</a>). To request deletion of your stored account data, contact privacy@decayfix.com.
+      </p>
+    </div>
+  </div>
+</BaseLayout>

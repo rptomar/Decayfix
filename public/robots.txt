@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /billing
+Disallow: /login
+Disallow: /api/*
+
+Sitemap: https://decayfix.com/sitemap-index.xml
