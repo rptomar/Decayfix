@@ -11,11 +11,11 @@ export interface PageSuggestionInput {
 
 /**
  * Generates an AI-driven content refresh suggestion.
- * Supports:
- * 1. Google Gemini API (100% Free on Google AI Studio tier)
- * 2. Groq Cloud API (100% Free tier)
+ * Prioritizes:
+ * 1. Google Gemini API (100% Free tier on Google AI Studio - gemini-flash-latest / gemini-2.5-flash)
+ * 2. Groq Cloud API (Free tier)
  * 3. Anthropic Claude API (Claude 3.5 Haiku)
- * 4. Built-in Smart Heuristic SEO Rule Engine (100% Free, 0 external API calls)
+ * 4. Built-in Smart Heuristic SEO Rule Engine (100% Free offline fallback)
  */
 export async function generateContentSuggestion(page: PageSuggestionInput): Promise<string> {
   const prompt = `You are a world-class SEO strategist and content editor.
@@ -30,32 +30,37 @@ Provide a concise, 2-to-4 sentence specific recommendation for how the blogger s
 Focus on actionable advice (e.g. updating outdated stats/dates, addressing new user search intent, expanding weak sections, improving title CTR, or adding relevant FAQs).
 Keep it strictly under 4 sentences. Do not use conversational filler.`;
 
-  // 1. Check for Free Google Gemini API (GEMINI_API_KEY)
+  // 1. Check for Google Gemini API Key (GEMINI_API_KEY)
   const geminiKey = process.env.GEMINI_API_KEY;
+
   if (geminiKey && !geminiKey.startsWith('dummy_') && geminiKey.trim() !== '') {
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { maxOutputTokens: 250, temperature: 0.3 },
-          }),
+    const modelsToTry = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.7-flash'];
+
+    for (const modelName of modelsToTry) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiKey.trim()}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { maxOutputTokens: 250, temperature: 0.3 },
+            }),
+          }
+        );
+        const data = await response.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text && text.trim().length > 0) {
+          return text.trim();
         }
-      );
-      const data = await response.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text && text.trim().length > 0) {
-        return text.trim();
+      } catch (err: any) {
+        console.warn(`Gemini API request failed on ${modelName}:`, err?.message || err);
       }
-    } catch (err: any) {
-      console.warn('Gemini API call failed, falling back:', err?.message || err);
     }
   }
 
-  // 2. Check for Free Groq API (GROQ_API_KEY)
+  // 2. Check for Groq API (GROQ_API_KEY)
   const groqKey = process.env.GROQ_API_KEY;
   if (groqKey && !groqKey.startsWith('dummy_') && groqKey.trim() !== '') {
     try {
@@ -63,7 +68,7 @@ Keep it strictly under 4 sentences. Do not use conversational filler.`;
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${groqKey}`,
+          Authorization: `Bearer ${groqKey.trim()}`,
         },
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
@@ -84,9 +89,9 @@ Keep it strictly under 4 sentences. Do not use conversational filler.`;
 
   // 3. Check for Anthropic Claude API (ANTHROPIC_API_KEY)
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  if (anthropicKey && !anthropicKey.startsWith('dummy_') && anthropicKey.trim() !== '') {
+  if (anthropicKey && anthropicKey.startsWith('sk-ant-')) {
     try {
-      const anthropic = new Anthropic({ apiKey: anthropicKey });
+      const anthropic = new Anthropic({ apiKey: anthropicKey.trim() });
       const message = await anthropic.messages.create({
         model: 'claude-3-5-haiku-20241022',
         max_tokens: 250,
