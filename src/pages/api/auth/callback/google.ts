@@ -28,7 +28,10 @@ export const GET: APIRoute = async ({ request, redirect, cookies }) => {
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const siteUrl = (process.env.SITE_URL || url.origin).replace(/\/$/, '');
+  
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || url.host;
+  const proto = request.headers.get('x-forwarded-proto') || (url.protocol.replace(':', '')) || 'https';
+  const siteUrl = `${proto}://${host}`.replace(/\/$/, '');
   const redirectUri = `${siteUrl}/api/auth/callback/google`;
 
   if (!clientId || !clientSecret || clientId.startsWith('dummy_')) {
@@ -54,7 +57,8 @@ export const GET: APIRoute = async ({ request, redirect, cookies }) => {
     const tokenData = await tokenRes.json();
     if (!tokenRes.ok) {
       console.error('Failed to exchange Google auth code:', tokenData);
-      return redirect('/login?error=token_exchange_failed');
+      const detail = tokenData?.error_description || tokenData?.error || 'token_exchange_failed';
+      return redirect(`/login?error=${encodeURIComponent(detail)}`);
     }
 
     const { access_token, refresh_token, expires_in, id_token, token_type, scope } = tokenData;
@@ -66,7 +70,9 @@ export const GET: APIRoute = async ({ request, redirect, cookies }) => {
     const profile = await userRes.json();
 
     if (!profile.id || !profile.email) {
-      return redirect('/login?error=profile_fetch_failed');
+      console.error('Failed to fetch Google profile:', profile);
+      const detail = profile?.error?.message || 'profile_fetch_failed';
+      return redirect(`/login?error=${encodeURIComponent(detail)}`);
     }
 
     // 3. Save or update user and tokens in Neon DB (safely caught)
@@ -160,6 +166,6 @@ export const GET: APIRoute = async ({ request, redirect, cookies }) => {
     return redirect('/dashboard');
   } catch (err: any) {
     console.error('Google OAuth callback handler error:', err);
-    return redirect('/login?error=callback_error');
+    return redirect(`/login?error=${encodeURIComponent(err?.message || 'callback_error')}`);
   }
 };

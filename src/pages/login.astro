@@ -36,11 +36,11 @@ const errorParam = Astro.url.searchParams.get('error');
       </div>
 
       {errorParam && (
-        <div class="mb-6 p-3 rounded-lg bg-rose-950/60 border border-rose-500/30 text-rose-300 text-xs text-center">
+        <div class="mb-6 p-3.5 rounded-xl bg-rose-950/70 border border-rose-500/40 text-rose-200 text-xs text-center break-words leading-relaxed shadow-lg">
           {errorParam === 'oauth_denied' && 'Google sign-in was cancelled.'}
           {errorParam === 'token_exchange_failed' && 'Failed to exchange authorization code with Google. Please check your credentials.'}
           {errorParam === 'callback_error' && 'An error occurred during authentication. Please try again.'}
-          {!['oauth_denied', 'token_exchange_failed', 'callback_error'].includes(errorParam) && 'Authentication failed. Please try again.'}
+          {!['oauth_denied', 'token_exchange_failed', 'callback_error'].includes(errorParam) && `Sign-in detail: ${errorParam}`}
         </div>
       )}
 

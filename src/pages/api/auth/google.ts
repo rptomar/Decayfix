@@ -5,7 +5,10 @@ export const prerender = false;
 
 export const GET: APIRoute = async ({ request, redirect, cookies }) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const siteUrl = (process.env.SITE_URL || new URL(request.url).origin).replace(/\/$/, '');
+  
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || new URL(request.url).host;
+  const proto = request.headers.get('x-forwarded-proto') || (new URL(request.url).protocol.replace(':', '')) || 'https';
+  const siteUrl = `${proto}://${host}`.replace(/\/$/, '');
   const redirectUri = `${siteUrl}/api/auth/callback/google`;
 
   // If no Google Client ID configured or using placeholder, start instantaneous Demo session
