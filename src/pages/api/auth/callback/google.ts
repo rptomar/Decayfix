@@ -62,6 +62,7 @@ export const GET: APIRoute = async ({ request, redirect, cookies }) => {
     }
 
     const { access_token, refresh_token, expires_in, id_token, token_type, scope } = tokenData;
+    const encryptedRefresh = refresh_token ? encryptToken(refresh_token) : undefined;
 
     // 2. Fetch user profile from Google
     const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -111,7 +112,6 @@ export const GET: APIRoute = async ({ request, redirect, cookies }) => {
           .where(and(eq(accounts.provider, 'google'), eq(accounts.providerAccountId, profile.id)))
           .limit(1);
 
-        const encryptedRefresh = refresh_token ? encryptToken(refresh_token) : undefined;
         const expiresAt = expires_in ? Math.floor(Date.now() / 1000) + Number(expires_in) : undefined;
 
         if (existingAccount.length > 0) {
