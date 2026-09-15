@@ -76,7 +76,7 @@ export default function DashboardApp({
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
-  // Load Razorpay Checkout script dynamically
+  // Load Razorpay Checkout script dynamically & fetch live GSC properties
   useEffect(() => {
     if (!document.getElementById('razorpay-checkout-script')) {
       const script = document.createElement('script');
@@ -85,12 +85,31 @@ export default function DashboardApp({
       script.async = true;
       document.body.appendChild(script);
     }
+
+    // Auto-fetch verified Search Console sites
+    const fetchGscProperties = async () => {
+      try {
+        const res = await fetch('/api/sites');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.sites && data.sites.length > 0) {
+            setSites(data.sites);
+            if (!selectedSiteUrl) {
+              setSelectedSiteUrl(data.sites[0].siteUrl);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Could not auto-fetch GSC properties:', e);
+      }
+    };
+    fetchGscProperties();
   }, []);
 
   const handleRunAnalysis = async (siteToAnalyze?: string) => {
     let url = siteToAnalyze || selectedSiteUrl || customSiteInput;
     if (!url || url.trim() === '') {
-      setErrorMsg('Please enter a website URL (e.g. https://godamwala.com).');
+      setErrorMsg('Please enter a website URL (e.g. https://godamwala.com or godamwala.com).');
       return;
     }
 
@@ -295,12 +314,17 @@ export default function DashboardApp({
             {sites.length > 0 ? (
               <select
                 value={selectedSiteUrl}
-                onChange={(e) => setSelectedSiteUrl(e.target.value)}
+                onChange={(e) => {
+                  setSelectedSiteUrl(e.target.value);
+                  setCustomSiteInput(e.target.value);
+                }}
                 className="w-full bg-slate-950 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
               >
                 {sites.map((site) => (
                   <option key={site.siteUrl} value={site.siteUrl}>
-                    {site.siteUrl} {site.lastSyncedAt ? `(Synced ${new Date(site.lastSyncedAt).toLocaleDateString()})` : ''}
+                    {site.siteUrl.startsWith('sc-domain:')
+                      ? `🌐 ${site.siteUrl.replace('sc-domain:', '')} (Domain Property)`
+                      : `🔗 ${site.siteUrl}`}
                   </option>
                 ))}
               </select>

@@ -60,8 +60,8 @@ export const POST: APIRoute = async ({ request }) => {
     // 2. Check purchase entitlement
     const entitlement = await checkSiteUnlockStatus(userId, siteId);
 
-    // 3. Fetch Google Refresh Token
-    const refreshToken = await getUserGoogleRefreshToken(userId);
+    // 3. Fetch Google Refresh Token (from session cookie or DB)
+    const refreshToken = await getUserGoogleRefreshToken(userId, request);
 
     let recentMetrics = new Map();
     let baselineMetrics = new Map();
@@ -71,28 +71,54 @@ export const POST: APIRoute = async ({ request }) => {
       GSC_LAG_BUFFER_DAYS
     );
 
+    let resolvedGscProperty = siteUrl;
+    let isLiveGscConnected = false;
+
     if (refreshToken && siteUrl && !refreshToken.startsWith('dummy_')) {
       try {
         const gsc = getGscClient(refreshToken);
+        
+        // Auto-match exact GSC property name (handles sc-domain: vs https://)
+        try {
+          const siteListRes = await gsc.sites.list();
+          const verified = siteListRes.data.siteEntry || [];
+          const rawTarget = siteUrl.replace(/^https?:\/\//i, '').replace(/^sc-domain:/i, '').replace(/\/$/, '').toLowerCase();
+          
+          const match = verified.find((s) => {
+            const entryClean = (s.siteUrl || '').replace(/^https?:\/\//i, '').replace(/^sc-domain:/i, '').replace(/\/$/, '').toLowerCase();
+            return s.siteUrl === siteUrl || entryClean === rawTarget || entryClean.includes(rawTarget) || rawTarget.includes(entryClean);
+          });
+          
+          if (match && match.siteUrl) {
+            resolvedGscProperty = match.siteUrl;
+            console.log(`[DecayFix] Auto-resolved GSC property to: ${resolvedGscProperty}`);
+          }
+        } catch (listErr: any) {
+          console.warn('[DecayFix] Could not list GSC sites for property match:', listErr.message);
+        }
+
+        console.log(`[DecayFix] Querying live GSC metrics for: ${resolvedGscProperty}`);
         recentMetrics = await fetchGscPageMetrics(
           gsc,
-          siteUrl,
+          resolvedGscProperty,
           recent.startDate,
           recent.endDate
         );
         baselineMetrics = await fetchGscPageMetrics(
           gsc,
-          siteUrl,
+          resolvedGscProperty,
           baseline.startDate,
           baseline.endDate
         );
+        isLiveGscConnected = true;
+        console.log(`[DecayFix] Fetched ${recentMetrics.size} recent pages and ${baselineMetrics.size} baseline pages from Google Search Console.`);
       } catch (gscErr: any) {
-        console.warn('Live GSC query failed, fallback to simulated metrics:', gscErr.message);
+        console.warn('Live GSC query failed:', gscErr?.message || gscErr);
       }
     }
 
-    // If no live metrics retrieved, populate contextual demo metrics
-    if (recentMetrics.size === 0) {
+    // Only populate simulated fallback metrics if no real GSC token is connected
+    if (!isLiveGscConnected && recentMetrics.size === 0) {
       const cleanBase = siteUrl.replace(/\/$/, '');
       const sampleSlugs = [
         { slug: 'blog/best-seo-tools-2024', baseC: 380, baseI: 8900, recC: 120, recI: 3400, pos: 8.2, basePos: 3.4 },

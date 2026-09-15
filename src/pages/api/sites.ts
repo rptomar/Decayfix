@@ -37,7 +37,7 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     // 2. Fetch fresh sites from Google Search Console API using refresh token
-    const refreshToken = await getUserGoogleRefreshToken(userId);
+    const refreshToken = await getUserGoogleRefreshToken(userId, request);
     let gscSites: Array<{ siteUrl: string; permissionLevel: string }> = [];
 
     if (refreshToken) {

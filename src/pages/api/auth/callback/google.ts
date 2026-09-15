@@ -146,6 +146,7 @@ export const GET: APIRoute = async ({ request, redirect, cookies }) => {
       name: profile.name,
       email: profile.email,
       image: profile.picture,
+      refreshToken: encryptedRefresh,
     });
 
     cookies.set('decayfix_session', Buffer.from(sessionPayload).toString('base64'), {
