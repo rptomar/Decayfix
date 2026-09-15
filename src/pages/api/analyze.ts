@@ -33,20 +33,24 @@ export const POST: APIRoute = async ({ request }) => {
     // 1. Resolve site record
     let siteRecord: any = null;
     if (db) {
-      if (targetSiteId) {
-        const found = await db
-          .select()
-          .from(sites)
-          .where(and(eq(sites.id, targetSiteId), eq(sites.userId, userId)))
-          .limit(1);
-        siteRecord = found[0];
-      } else if (targetSiteUrl) {
-        const found = await db
-          .select()
-          .from(sites)
-          .where(and(eq(sites.siteUrl, targetSiteUrl), eq(sites.userId, userId)))
-          .limit(1);
-        siteRecord = found[0];
+      try {
+        if (targetSiteId) {
+          const found = await db
+            .select()
+            .from(sites)
+            .where(and(eq(sites.id, targetSiteId), eq(sites.userId, userId)))
+            .limit(1);
+          siteRecord = found[0];
+        } else if (targetSiteUrl) {
+          const found = await db
+            .select()
+            .from(sites)
+            .where(and(eq(sites.siteUrl, targetSiteUrl), eq(sites.userId, userId)))
+            .limit(1);
+          siteRecord = found[0];
+        }
+      } catch (dbErr) {
+        console.warn('Could not query site record from DB (proceeding without DB record):', dbErr);
       }
     }
 

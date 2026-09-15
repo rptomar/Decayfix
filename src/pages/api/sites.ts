@@ -22,14 +22,18 @@ export const GET: APIRoute = async ({ request }) => {
     // 1. Get existing saved sites in database
     let savedSites: Array<{ id: string; siteUrl: string; lastSyncedAt: Date | null }> = [];
     if (db) {
-      savedSites = await db
-        .select({
-          id: sites.id,
-          siteUrl: sites.siteUrl,
-          lastSyncedAt: sites.lastSyncedAt,
-        })
-        .from(sites)
-        .where(eq(sites.userId, userId));
+      try {
+        savedSites = await db
+          .select({
+            id: sites.id,
+            siteUrl: sites.siteUrl,
+            lastSyncedAt: sites.lastSyncedAt,
+          })
+          .from(sites)
+          .where(eq(sites.userId, userId));
+      } catch (dbErr) {
+        console.warn('Could not read sites from DB:', dbErr);
+      }
     }
 
     // 2. Fetch fresh sites from Google Search Console API using refresh token
@@ -46,25 +50,29 @@ export const GET: APIRoute = async ({ request }) => {
 
     // 3. Upsert newly discovered GSC sites into database
     if (db && gscSites.length > 0) {
-      for (const gscSite of gscSites) {
-        const exists = savedSites.some((s) => s.siteUrl === gscSite.siteUrl);
-        if (!exists) {
-          const inserted = await db
-            .insert(sites)
-            .values({
-              userId,
-              siteUrl: gscSite.siteUrl,
-              permissionLevel: gscSite.permissionLevel,
-            })
-            .returning();
-          if (inserted && inserted[0]) {
-            savedSites.push({
-              id: inserted[0].id,
-              siteUrl: inserted[0].siteUrl,
-              lastSyncedAt: inserted[0].lastSyncedAt,
-            });
+      try {
+        for (const gscSite of gscSites) {
+          const exists = savedSites.some((s) => s.siteUrl === gscSite.siteUrl);
+          if (!exists) {
+            const inserted = await db
+              .insert(sites)
+              .values({
+                userId,
+                siteUrl: gscSite.siteUrl,
+                permissionLevel: gscSite.permissionLevel,
+              })
+              .returning();
+            if (inserted && inserted[0]) {
+              savedSites.push({
+                id: inserted[0].id,
+                siteUrl: inserted[0].siteUrl,
+                lastSyncedAt: inserted[0].lastSyncedAt,
+              });
+            }
           }
         }
+      } catch (dbErr) {
+        console.warn('Could not save GSC sites to DB:', dbErr);
       }
     }
 
