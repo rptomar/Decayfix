@@ -66,8 +66,8 @@ export function analyzeTrafficDecay(
     };
 
     // Calculate percentage changes
-    // Only analyze pages that had meaningful traffic in baseline (e.g. at least 5 clicks or 50 impressions)
-    if (baseline.clicks < 5 && baseline.impressions < 50) {
+    // Include all pages that had activity in either period
+    if (baseline.clicks === 0 && baseline.impressions === 0 && recent.clicks === 0 && recent.impressions === 0) {
       continue;
     }
 
@@ -82,8 +82,8 @@ export function analyzeTrafficDecay(
       : 0;
 
     // Flag if either clicks or impressions dropped by at least DECAY_THRESHOLD_PERCENT
-    const isDecayingClicks = clickDropPercent >= thresholdPercent && clickDiff > 2;
-    const isDecayingImpressions = impDropPercent >= thresholdPercent && impDiff > 20;
+    const isDecayingClicks = clickDropPercent >= thresholdPercent && clickDiff >= 1;
+    const isDecayingImpressions = impDropPercent >= thresholdPercent && impDiff >= 5;
     const isFlagged = isDecayingClicks || isDecayingImpressions;
 
     // Severity score = lost clicks * (click drop % / 100) + (lost impressions / 50)

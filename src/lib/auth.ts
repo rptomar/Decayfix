@@ -56,26 +56,33 @@ export const authConfig: AuthConfig = {
 };
 
 /**
- * Retrieves the Google Refresh Token for a given user from session cookie or the accounts table.
+ * Retrieves both Google Access Token and Refresh Token from session cookie or database.
  */
-export async function getUserGoogleRefreshToken(userId: string, req?: Request): Promise<string | null> {
-  // 1. Check request session cookie if available
+export async function getUserGoogleTokens(userId: string, req?: Request): Promise<{ accessToken: string | null; refreshToken: string | null }> {
+  let accessToken: string | null = null;
+  let refreshToken: string | null = null;
+
+  // 1. Check request session cookie first
   if (req) {
     try {
       const { getSession } = await import('./session');
       const session = await getSession(req);
-      const encryptedSessionToken = (session?.user as any)?.refreshToken;
-      if (encryptedSessionToken) {
-        const decrypted = decryptToken(encryptedSessionToken);
-        if (decrypted) return decrypted;
+      const encAccess = (session?.user as any)?.accessToken;
+      const encRefresh = (session?.user as any)?.refreshToken;
+
+      if (encAccess) {
+        accessToken = decryptToken(encAccess) || encAccess;
+      }
+      if (encRefresh) {
+        refreshToken = decryptToken(encRefresh) || encRefresh;
       }
     } catch (e) {
-      console.warn('Could not read refresh token from request session:', e);
+      console.warn('Could not read tokens from session:', e);
     }
   }
 
-  // 2. Check accounts table in database
-  if (db) {
+  // 2. Fall back to accounts table in DB if needed
+  if ((!accessToken || !refreshToken) && db) {
     try {
       const result = await db
         .select()
@@ -83,15 +90,28 @@ export async function getUserGoogleRefreshToken(userId: string, req?: Request): 
         .where(and(eq(accounts.userId, userId), eq(accounts.provider, 'google')))
         .limit(1);
 
-      if (result && result.length > 0 && result[0].refresh_token) {
-        return decryptToken(result[0].refresh_token);
+      if (result && result.length > 0) {
+        if (!accessToken && result[0].access_token) {
+          accessToken = result[0].access_token;
+        }
+        if (!refreshToken && result[0].refresh_token) {
+          refreshToken = decryptToken(result[0].refresh_token) || result[0].refresh_token;
+        }
       }
     } catch (error) {
-      console.error('Error fetching Google refresh token from DB:', error);
+      console.error('Error fetching Google tokens from DB:', error);
     }
   }
 
-  return null;
+  return { accessToken, refreshToken };
+}
+
+/**
+ * Retrieves the Google Refresh Token for a given user from session cookie or the accounts table.
+ */
+export async function getUserGoogleRefreshToken(userId: string, req?: Request): Promise<string | null> {
+  const tokens = await getUserGoogleTokens(userId, req);
+  return tokens.refreshToken || tokens.accessToken;
 }
 
 /**

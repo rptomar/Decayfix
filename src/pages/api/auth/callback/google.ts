@@ -62,6 +62,7 @@ export const GET: APIRoute = async ({ request, redirect, cookies }) => {
     }
 
     const { access_token, refresh_token, expires_in, id_token, token_type, scope } = tokenData;
+    const encryptedAccess = access_token ? encryptToken(access_token) : undefined;
     const encryptedRefresh = refresh_token ? encryptToken(refresh_token) : undefined;
 
     // 2. Fetch user profile from Google
@@ -105,7 +106,7 @@ export const GET: APIRoute = async ({ request, redirect, cookies }) => {
           }
         }
 
-        // Upsert account with encrypted refresh token
+        // Upsert account with encrypted tokens
         const existingAccount = await db
           .select()
           .from(accounts)
@@ -152,6 +153,7 @@ export const GET: APIRoute = async ({ request, redirect, cookies }) => {
       name: profile.name,
       email: profile.email,
       image: profile.picture,
+      accessToken: encryptedAccess,
       refreshToken: encryptedRefresh,
     });
 

@@ -5,6 +5,7 @@ export interface UserSession {
   name?: string | null;
   email?: string | null;
   image?: string | null;
+  accessToken?: string | null;
   refreshToken?: string | null;
 }
 
@@ -27,6 +28,7 @@ export async function getSession(req: Request): Promise<Session | null> {
             name: user.name || 'Blogger',
             email: user.email || 'blogger@example.com',
             image: user.image || null,
+            accessToken: user.accessToken || null,
             refreshToken: user.refreshToken || null,
           } as any,
           expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString(),

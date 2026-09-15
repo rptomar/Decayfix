@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getSession } from '@/lib/session';
-import { getUserGoogleRefreshToken } from '@/lib/auth';
+import { getUserGoogleTokens, getUserGoogleRefreshToken } from '@/lib/auth';
 import {
   getGscClient,
   getAnalysisDateRanges,
@@ -60,8 +60,8 @@ export const POST: APIRoute = async ({ request }) => {
     // 2. Check purchase entitlement
     const entitlement = await checkSiteUnlockStatus(userId, siteId);
 
-    // 3. Fetch Google Refresh Token (from session cookie or DB)
-    const refreshToken = await getUserGoogleRefreshToken(userId, request);
+    // 3. Fetch Google Tokens (from session cookie or DB)
+    const { accessToken, refreshToken } = await getUserGoogleTokens(userId, request);
 
     let recentMetrics = new Map();
     let baselineMetrics = new Map();
@@ -74,9 +74,9 @@ export const POST: APIRoute = async ({ request }) => {
     let resolvedGscProperty = siteUrl;
     let isLiveGscConnected = false;
 
-    if (refreshToken && siteUrl && !refreshToken.startsWith('dummy_')) {
+    if ((refreshToken || accessToken) && siteUrl) {
       try {
-        const gsc = getGscClient(refreshToken);
+        const gsc = getGscClient(refreshToken, accessToken);
         
         // Auto-match exact GSC property name (handles sc-domain: vs https://)
         try {

@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getSession } from '@/lib/session';
-import { getUserGoogleRefreshToken } from '@/lib/auth';
+import { getUserGoogleTokens, getUserGoogleRefreshToken } from '@/lib/auth';
 import { fetchUserGscSites } from '@/lib/gsc';
 import { db, sites } from '@/db';
 import { eq } from 'drizzle-orm';
@@ -36,13 +36,13 @@ export const GET: APIRoute = async ({ request }) => {
       }
     }
 
-    // 2. Fetch fresh sites from Google Search Console API using refresh token
-    const refreshToken = await getUserGoogleRefreshToken(userId, request);
+    // 2. Fetch fresh sites from Google Search Console API using tokens
+    const { accessToken, refreshToken } = await getUserGoogleTokens(userId, request);
     let gscSites: Array<{ siteUrl: string; permissionLevel: string }> = [];
 
-    if (refreshToken) {
+    if (refreshToken || accessToken) {
       try {
-        gscSites = await fetchUserGscSites(refreshToken);
+        gscSites = await fetchUserGscSites(refreshToken, accessToken);
       } catch (err: any) {
         console.warn('Could not fetch remote GSC sites:', err.message);
       }
