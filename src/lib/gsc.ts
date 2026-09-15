@@ -186,7 +186,13 @@ export async function queryGscWithCandidates(
     }
   }
 
-  throw lastError || new Error(`No accessible Google Search Console property found for "${rawInputUrl}". Verified properties: ${verifiedList.join(', ')}`);
+  const verifiedMsg = verifiedList.length > 0 
+    ? `Verified properties found for this account: ${verifiedList.join(', ')}` 
+    : 'No verified Search Console properties were found for this Google account.';
+
+  throw new Error(
+    `Google Account does not have permission for "${rawInputUrl}" in Google Search Console. ${verifiedMsg}. Please add this email in Search Console Settings > Users & Permissions, or sign in with the Google account that owns the site.`
+  );
 }
 
 /**
