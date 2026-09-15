@@ -5,7 +5,7 @@ export const prerender = false;
 
 export const GET: APIRoute = async ({ request, redirect, cookies }) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const siteUrl = process.env.SITE_URL || new URL(request.url).origin;
+  const siteUrl = (process.env.SITE_URL || new URL(request.url).origin).replace(/\/$/, '');
   const redirectUri = `${siteUrl}/api/auth/callback/google`;
 
   // If no Google Client ID configured or using placeholder, start instantaneous Demo session

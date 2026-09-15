@@ -28,7 +28,7 @@ export const GET: APIRoute = async ({ request, redirect, cookies }) => {
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const siteUrl = process.env.SITE_URL || url.origin;
+  const siteUrl = (process.env.SITE_URL || url.origin).replace(/\/$/, '');
   const redirectUri = `${siteUrl}/api/auth/callback/google`;
 
   if (!clientId || !clientSecret || clientId.startsWith('dummy_')) {
@@ -69,70 +69,74 @@ export const GET: APIRoute = async ({ request, redirect, cookies }) => {
       return redirect('/login?error=profile_fetch_failed');
     }
 
-    // 3. Save or update user and tokens in Neon DB
+    // 3. Save or update user and tokens in Neon DB (safely caught)
     let userId = profile.id;
     if (db) {
-      // Find or create user
-      const existingUsers = await db.select().from(users).where(eq(users.email, profile.email)).limit(1);
-      if (existingUsers.length > 0) {
-        userId = existingUsers[0].id;
-        await db
-          .update(users)
-          .set({
-            name: profile.name || existingUsers[0].name,
-            image: profile.picture || existingUsers[0].image,
-          })
-          .where(eq(users.id, userId));
-      } else {
-        const created = await db
-          .insert(users)
-          .values({
-            name: profile.name,
-            email: profile.email,
-            image: profile.picture,
-          })
-          .returning();
-        if (created && created[0]) {
-          userId = created[0].id;
+      try {
+        // Find or create user
+        const existingUsers = await db.select().from(users).where(eq(users.email, profile.email)).limit(1);
+        if (existingUsers.length > 0) {
+          userId = existingUsers[0].id;
+          await db
+            .update(users)
+            .set({
+              name: profile.name || existingUsers[0].name,
+              image: profile.picture || existingUsers[0].image,
+            })
+            .where(eq(users.id, userId));
+        } else {
+          const created = await db
+            .insert(users)
+            .values({
+              name: profile.name,
+              email: profile.email,
+              image: profile.picture,
+            })
+            .returning();
+          if (created && created[0]) {
+            userId = created[0].id;
+          }
         }
-      }
 
-      // Upsert account with encrypted refresh token
-      const existingAccount = await db
-        .select()
-        .from(accounts)
-        .where(and(eq(accounts.provider, 'google'), eq(accounts.providerAccountId, profile.id)))
-        .limit(1);
+        // Upsert account with encrypted refresh token
+        const existingAccount = await db
+          .select()
+          .from(accounts)
+          .where(and(eq(accounts.provider, 'google'), eq(accounts.providerAccountId, profile.id)))
+          .limit(1);
 
-      const encryptedRefresh = refresh_token ? encryptToken(refresh_token) : undefined;
-      const expiresAt = expires_in ? Math.floor(Date.now() / 1000) + Number(expires_in) : undefined;
+        const encryptedRefresh = refresh_token ? encryptToken(refresh_token) : undefined;
+        const expiresAt = expires_in ? Math.floor(Date.now() / 1000) + Number(expires_in) : undefined;
 
-      if (existingAccount.length > 0) {
-        await db
-          .update(accounts)
-          .set({
+        if (existingAccount.length > 0) {
+          await db
+            .update(accounts)
+            .set({
+              userId,
+              access_token,
+              ...(encryptedRefresh ? { refresh_token: encryptedRefresh } : {}),
+              expires_at: expiresAt,
+              id_token,
+              scope,
+              token_type,
+            })
+            .where(and(eq(accounts.provider, 'google'), eq(accounts.providerAccountId, profile.id)));
+        } else {
+          await db.insert(accounts).values({
             userId,
+            provider: 'google',
+            providerAccountId: profile.id,
+            type: 'oauth',
             access_token,
-            ...(encryptedRefresh ? { refresh_token: encryptedRefresh } : {}),
+            refresh_token: encryptedRefresh,
             expires_at: expiresAt,
             id_token,
             scope,
             token_type,
-          })
-          .where(and(eq(accounts.provider, 'google'), eq(accounts.providerAccountId, profile.id)));
-      } else {
-        await db.insert(accounts).values({
-          userId,
-          provider: 'google',
-          providerAccountId: profile.id,
-          type: 'oauth',
-          access_token,
-          refresh_token: encryptedRefresh,
-          expires_at: expiresAt,
-          id_token,
-          scope,
-          token_type,
-        });
+          });
+        }
+      } catch (dbError) {
+        console.error('Database sync warning during Google OAuth (proceeding with session):', dbError);
       }
     }
 

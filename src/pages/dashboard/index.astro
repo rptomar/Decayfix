@@ -18,12 +18,16 @@ const userId = session.user.id;
 // Fetch sites from DB
 let userSites: Array<{ id: string; siteUrl: string; lastSyncedAt: string | null }> = [];
 if (db) {
-  const dbSites = await db.select().from(sites).where(eq(sites.userId, userId));
-  userSites = dbSites.map((s) => ({
-    id: s.id,
-    siteUrl: s.siteUrl,
-    lastSyncedAt: s.lastSyncedAt ? s.lastSyncedAt.toISOString() : null,
-  }));
+  try {
+    const dbSites = await db.select().from(sites).where(eq(sites.userId, userId));
+    userSites = dbSites.map((s) => ({
+      id: s.id,
+      siteUrl: s.siteUrl,
+      lastSyncedAt: s.lastSyncedAt ? s.lastSyncedAt.toISOString() : null,
+    }));
+  } catch (err) {
+    console.error('Error fetching sites from DB:', err);
+  }
 }
 
 // Check entitlement
