@@ -98,6 +98,98 @@ export function getAnalysisDateRanges(windowDays = 56, lagDays = 3) {
 }
 
 /**
+ * Queries Search Console page-level analytics with automatic candidate property matching (domain vs URL prefix)
+ */
+export async function queryGscWithCandidates(
+  gsc: ReturnType<typeof getGscClient>,
+  rawInputUrl: string,
+  startDate: string,
+  endDate: string,
+  rowLimit = 5000
+): Promise<{ metrics: Map<string, GscPageMetric>; propertyUsed: string }> {
+  const cleanDomain = rawInputUrl
+    .replace(/^https?:\/\//i, '')
+    .replace(/^www\./i, '')
+    .replace(/^sc-domain:/i, '')
+    .replace(/\/$/, '')
+    .toLowerCase();
+
+  // Try to list verified properties first to prioritize exact match
+  let verifiedList: string[] = [];
+  try {
+    const listRes = await gsc.sites.list();
+    verifiedList = (listRes.data.siteEntry || []).map((s) => s.siteUrl).filter(Boolean) as string[];
+  } catch (e) {
+    console.warn('Could not list GSC sites:', e);
+  }
+
+  // Build candidate order
+  const candidates: string[] = [];
+  
+  // 1. Check verified list for matches with domain
+  for (const v of verifiedList) {
+    const vClean = v.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/^sc-domain:/i, '').replace(/\/$/, '').toLowerCase();
+    if (vClean === cleanDomain) {
+      candidates.push(v);
+    }
+  }
+
+  // 2. Add standard formats (domain property first!)
+  candidates.push(`sc-domain:${cleanDomain}`);
+  candidates.push(rawInputUrl);
+  candidates.push(`https://${cleanDomain}/`);
+  candidates.push(`https://www.${cleanDomain}/`);
+  candidates.push(`http://${cleanDomain}/`);
+  candidates.push(`http://www.${cleanDomain}/`);
+
+  // Add any other verified properties
+  for (const v of verifiedList) {
+    if (!candidates.includes(v)) candidates.push(v);
+  }
+
+  const uniqueCandidates = Array.from(new Set(candidates.filter(Boolean)));
+  let lastError: any = null;
+
+  for (const property of uniqueCandidates) {
+    try {
+      console.log(`[DecayFix] Attempting GSC SearchAnalytics query on candidate property: "${property}"`);
+      const response = await gsc.searchanalytics.query({
+        siteUrl: property,
+        requestBody: {
+          startDate,
+          endDate,
+          dimensions: ['page'],
+          rowLimit,
+        },
+      });
+
+      const results = new Map<string, GscPageMetric>();
+      const rows = response.data.rows || [];
+      for (const row of rows) {
+        const pageUrl = row.keys?.[0];
+        if (pageUrl) {
+          results.set(pageUrl, {
+            url: pageUrl,
+            clicks: Math.round(row.clicks || 0),
+            impressions: Math.round(row.impressions || 0),
+            ctr: Number((row.ctr || 0).toFixed(4)),
+            position: Number((row.position || 0).toFixed(1)),
+          });
+        }
+      }
+
+      console.log(`[DecayFix] Successfully queried property "${property}"! Retrieved ${results.size} rows.`);
+      return { metrics: results, propertyUsed: property };
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`[DecayFix] Property candidate "${property}" failed: ${err?.message || err}. Trying next candidate...`);
+    }
+  }
+
+  throw lastError || new Error(`No accessible Google Search Console property found for "${rawInputUrl}". Verified properties: ${verifiedList.join(', ')}`);
+}
+
+/**
  * Queries Search Console page-level analytics for a specific date window
  */
 export async function fetchGscPageMetrics(
@@ -107,36 +199,6 @@ export async function fetchGscPageMetrics(
   endDate: string,
   rowLimit = 5000
 ): Promise<Map<string, GscPageMetric>> {
-  const results = new Map<string, GscPageMetric>();
-
-  try {
-    const response = await gsc.searchanalytics.query({
-      siteUrl,
-      requestBody: {
-        startDate,
-        endDate,
-        dimensions: ['page'],
-        rowLimit,
-      },
-    });
-
-    const rows = response.data.rows || [];
-    for (const row of rows) {
-      const pageUrl = row.keys?.[0];
-      if (pageUrl) {
-        results.set(pageUrl, {
-          url: pageUrl,
-          clicks: Math.round(row.clicks || 0),
-          impressions: Math.round(row.impressions || 0),
-          ctr: Number((row.ctr || 0).toFixed(4)),
-          position: Number((row.position || 0).toFixed(1)),
-        });
-      }
-    }
-  } catch (err: any) {
-    console.error(`GSC Query error for ${siteUrl} [${startDate} to ${endDate}]:`, err?.message || err);
-    throw err;
-  }
-
-  return results;
+  const result = await queryGscWithCandidates(gsc, siteUrl, startDate, endDate, rowLimit);
+  return result.metrics;
 }

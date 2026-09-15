@@ -4,6 +4,7 @@ import { getUserGoogleTokens, getUserGoogleRefreshToken } from '@/lib/auth';
 import {
   getGscClient,
   getAnalysisDateRanges,
+  queryGscWithCandidates,
   fetchGscPageMetrics,
 } from '@/lib/gsc';
 import { analyzeTrafficDecay } from '@/lib/analyzer';
@@ -88,39 +89,25 @@ export const POST: APIRoute = async ({ request }) => {
     try {
       const gsc = getGscClient(refreshToken, accessToken);
       
-      // Auto-match exact GSC property name (handles sc-domain: vs https://)
-      try {
-        const siteListRes = await gsc.sites.list();
-        const verified = siteListRes.data.siteEntry || [];
-        const rawTarget = siteUrl.replace(/^https?:\/\//i, '').replace(/^sc-domain:/i, '').replace(/\/$/, '').toLowerCase();
-        
-        const match = verified.find((s) => {
-          const entryClean = (s.siteUrl || '').replace(/^https?:\/\//i, '').replace(/^sc-domain:/i, '').replace(/\/$/, '').toLowerCase();
-          return s.siteUrl === siteUrl || entryClean === rawTarget || entryClean.includes(rawTarget) || rawTarget.includes(entryClean);
-        });
-        
-        if (match && match.siteUrl) {
-          resolvedGscProperty = match.siteUrl;
-          console.log(`[DecayFix] Auto-resolved GSC property to: ${resolvedGscProperty}`);
-        }
-      } catch (listErr: any) {
-        console.warn('[DecayFix] Could not list GSC sites for property match:', listErr.message);
-      }
-
-      console.log(`[DecayFix] Querying live GSC metrics for: ${resolvedGscProperty}`);
-      recentMetrics = await fetchGscPageMetrics(
+      console.log(`[DecayFix] Querying live GSC metrics for input URL: ${siteUrl}`);
+      const recentResult = await queryGscWithCandidates(
         gsc,
-        resolvedGscProperty,
+        siteUrl,
         recent.startDate,
         recent.endDate
       );
-      baselineMetrics = await fetchGscPageMetrics(
+      resolvedGscProperty = recentResult.propertyUsed;
+      recentMetrics = recentResult.metrics;
+
+      const baselineResult = await queryGscWithCandidates(
         gsc,
         resolvedGscProperty,
         baseline.startDate,
         baseline.endDate
       );
-      console.log(`[DecayFix] Fetched ${recentMetrics.size} recent pages and ${baselineMetrics.size} baseline pages from Google Search Console.`);
+      baselineMetrics = baselineResult.metrics;
+
+      console.log(`[DecayFix] Success! Fetched ${recentMetrics.size} recent pages and ${baselineMetrics.size} baseline pages from property: ${resolvedGscProperty}`);
     } catch (gscErr: any) {
       console.error('Live GSC query failed:', gscErr);
       const errMsg = gscErr?.message || 'Failed to query Google Search Console API';
