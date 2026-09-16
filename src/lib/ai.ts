@@ -18,23 +18,23 @@ export interface PageSuggestionInput {
  * 4. Built-in Smart Heuristic SEO Rule Engine (100% Free offline fallback)
  */
 export async function generateContentSuggestion(page: PageSuggestionInput): Promise<string> {
-  const prompt = `You are a world-class SEO strategist and content editor.
-A blog post has suffered search traffic decay:
-- URL: ${page.url}
-- Title/Topic: ${page.title}
-- Historical Baseline Clicks: ${page.baselineClicks}
+  const prompt = `You are a senior SEO strategist and technical content auditor.
+The following web page has suffered organic search traffic decay:
+- Page URL: ${page.url}
+- Page Topic: ${page.title}
+- Baseline Clicks: ${page.baselineClicks}
 - Recent Clicks: ${page.recentClicks} (Drop: ${page.dropPercentClicks}%)
 - Impression Drop: ${page.dropPercentImpressions}%
 
-Provide a concise, 2-to-4 sentence specific recommendation for how the blogger should refresh and optimize this page to recover its rankings and traffic.
-Focus on actionable advice (e.g. updating outdated stats/dates, addressing new user search intent, expanding weak sections, improving title CTR, or adding relevant FAQs).
-Keep it strictly under 4 sentences. Do not use conversational filler.`;
+Provide a concise, 2-to-3 sentence actionable recovery plan for this specific page.
+Give concrete advice tailored to the page type (for listing/location pages: update local rates, add area FAQs, schema markup, and high-intent title modifiers; for blog guides: refresh dates/facts, expand thin sections, and target People-Also-Ask queries).
+Keep your response strictly under 3 sentences. Output only the advice directly without introductory filler.`;
 
   // 1. Check for Google Gemini API Key (GEMINI_API_KEY)
   const geminiKey = process.env.GEMINI_API_KEY;
 
   if (geminiKey && !geminiKey.startsWith('dummy_') && geminiKey.trim() !== '') {
-    const modelsToTry = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.7-flash'];
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-flash-latest'];
 
     for (const modelName of modelsToTry) {
       try {
@@ -45,7 +45,7 @@ Keep it strictly under 4 sentences. Do not use conversational filler.`;
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { maxOutputTokens: 250, temperature: 0.3 },
+              generationConfig: { maxOutputTokens: 500, temperature: 0.3 },
             }),
           }
         );

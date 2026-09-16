@@ -15,18 +15,27 @@ export interface AnalyzedPageResult {
 }
 
 /**
- * Extracts a friendly title from a URL path if no title is present
+ * Extracts a friendly, contextual title from a URL path
  */
 export function extractTitleFromUrl(url: string): string {
   try {
     const parsed = new URL(url);
     const pathname = parsed.pathname.replace(/\/$/, '');
     const segments = pathname.split('/').filter(Boolean);
-    if (segments.length === 0) return parsed.hostname;
+    if (segments.length === 0) return `${parsed.hostname.replace(/^www\./i, '')} (Home Page)`;
+
+    // Handle numeric IDs at end of path (e.g., /lease/71 -> Lease Property #71)
+    if (segments.length >= 2 && /^\d+$/.test(segments[segments.length - 1])) {
+      const parent = segments[segments.length - 2].replace(/[-_]/g, ' ');
+      const parentCapitalized = parent.replace(/\b\w/g, (c) => c.toUpperCase());
+      return `${parentCapitalized} Property #${segments[segments.length - 1]}`;
+    }
+
     const lastSegment = segments[segments.length - 1];
-    return lastSegment
+    return decodeURIComponent(lastSegment)
       .replace(/[-_]/g, ' ')
       .replace(/\.html?$/i, '')
+      .replace(/(\d+)\s*(sqft|sqm)/gi, '($1 $2)')
       .replace(/\b\w/g, (char) => char.toUpperCase());
   } catch {
     return url;

@@ -125,29 +125,36 @@ export const POST: APIRoute = async ({ request }) => {
     // 4. Run decay analysis on real Search Console data
     const analyzedResults = analyzeTrafficDecay(recentMetrics, baselineMetrics);
 
-    // 5. Generate AI suggestions for flagged pages
-    const processedPages = [];
-    for (let i = 0; i < analyzedResults.length; i++) {
-      const pageItem = analyzedResults[i];
-      let suggestion = null;
+    // 5. Generate AI suggestions concurrently in parallel (Fast Sub-3s Analysis)
+    const maxAiSuggestions = entitlement.isUnlocked ? analyzedResults.length : FREE_TIER_PAGE_LIMIT;
 
-      if (pageItem.isFlagged) {
-        suggestion = await generateContentSuggestion({
-          url: pageItem.url,
-          title: pageItem.title,
-          baselineClicks: pageItem.baselineClicks,
-          recentClicks: pageItem.recentClicks,
-          dropPercentClicks: pageItem.dropPercentClicks,
-          dropPercentImpressions: pageItem.dropPercentImpressions,
-        });
-      }
+    const processedPages = await Promise.all(
+      analyzedResults.map(async (pageItem, idx) => {
+        let suggestion = null;
 
-      processedPages.push({
-        ...pageItem,
-        aiSuggestion: suggestion,
-        flaggedAt: pageItem.isFlagged ? new Date() : null,
-      });
-    }
+        // Generate AI suggestions for flagged pages within user's tier
+        if (pageItem.isFlagged && idx < maxAiSuggestions) {
+          try {
+            suggestion = await generateContentSuggestion({
+              url: pageItem.url,
+              title: pageItem.title,
+              baselineClicks: pageItem.baselineClicks,
+              recentClicks: pageItem.recentClicks,
+              dropPercentClicks: pageItem.dropPercentClicks,
+              dropPercentImpressions: pageItem.dropPercentImpressions,
+            });
+          } catch (aiErr) {
+            console.warn('AI suggestion error for', pageItem.url, aiErr);
+          }
+        }
+
+        return {
+          ...pageItem,
+          aiSuggestion: suggestion,
+          flaggedAt: pageItem.isFlagged ? new Date() : null,
+        };
+      })
+    );
 
     // 6. Save results to database if available
     if (db && siteRecord) {
