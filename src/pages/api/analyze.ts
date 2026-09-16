@@ -12,7 +12,7 @@ import { generateContentSuggestion } from '@/lib/ai';
 import { checkSiteUnlockStatus, gateAnalyzedPages } from '@/lib/entitlement';
 import { db, sites, pages } from '@/db';
 import { eq, and } from 'drizzle-orm';
-import { COMPARISON_WINDOW_DAYS, GSC_LAG_BUFFER_DAYS } from '@/lib/constants';
+import { COMPARISON_WINDOW_DAYS, GSC_LAG_BUFFER_DAYS, FREE_TIER_PAGE_LIMIT } from '@/lib/constants';
 
 export const prerender = false;
 
