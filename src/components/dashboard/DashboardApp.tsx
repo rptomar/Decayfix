@@ -108,6 +108,31 @@ export default function DashboardApp({
     };
   }, [analyzing]);
 
+  // Auto-restore previously analyzed data from sessionStorage on mount (prevents data loss when navigating)
+  useEffect(() => {
+    try {
+      const cacheKey = `decayfix_state_${user.id || 'current'}`;
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.results && parsed.results.length > 0) {
+          console.log('[DecayFix] Restoring cached audit results from session:', parsed.siteUrl);
+          setAnalysisResults(parsed.results);
+          setTotalFlagged(parsed.totalFlagged || 0);
+          setLockedCount(parsed.lockedCount || 0);
+          setIsUnlocked(parsed.isUnlocked ?? initialIsUnlocked);
+          if (parsed.siteUrl) {
+            setSelectedSiteUrl(parsed.siteUrl);
+            setCustomSiteInput(parsed.siteUrl);
+          }
+          setHasRunAnalysis(true);
+        }
+      }
+    } catch (e) {
+      console.warn('[DecayFix] Could not restore analysis from sessionStorage:', e);
+    }
+  }, [user.id]);
+
   // Load Razorpay Checkout script dynamically & fetch live GSC properties
   useEffect(() => {
     if (!document.getElementById('razorpay-checkout-script')) {
@@ -167,11 +192,31 @@ export default function DashboardApp({
       }
 
       console.log('[DecayFix] Analysis results received:', data);
-      setAnalysisResults(data.results || []);
-      setTotalFlagged(data.totalFlaggedCount || 0);
-      setLockedCount(data.lockedCount || 0);
-      setIsUnlocked(data.isUnlocked || false);
+      const results = data.results || [];
+      const flaggedCount = data.totalFlaggedCount || 0;
+      const locked = data.lockedCount || 0;
+      const unlocked = data.isUnlocked || false;
+
+      setAnalysisResults(results);
+      setTotalFlagged(flaggedCount);
+      setLockedCount(locked);
+      setIsUnlocked(unlocked);
       setHasRunAnalysis(true);
+
+      // Persist to sessionStorage so navigation between pages never loses state
+      try {
+        const cacheKey = `decayfix_state_${user.id || 'current'}`;
+        sessionStorage.setItem(cacheKey, JSON.stringify({
+          siteUrl: url,
+          results,
+          totalFlagged: flaggedCount,
+          lockedCount: locked,
+          isUnlocked: unlocked,
+          timestamp: Date.now(),
+        }));
+      } catch (cacheErr) {
+        console.warn('[DecayFix] SessionStorage write error:', cacheErr);
+      }
     } catch (err: any) {
       console.error('[DecayFix] Analysis error:', err);
       setErrorMsg(err.message || 'An error occurred during analysis');

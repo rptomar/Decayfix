@@ -1,5 +1,10 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getSession } from '@/lib/session';
+
+const session = await getSession(Astro.request);
+const isAuthenticated = !!session?.user?.id;
+const userName = session?.user?.name?.split(' ')[0] || '';
 ---
 
 <BaseLayout title="Find & Fix Decaying Search Traffic on Your Blog">
@@ -17,23 +22,35 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         Stop losing Google traffic to <span class="bg-gradient-to-r from-sky-400 via-indigo-300 to-rose-400 bg-clip-text text-transparent">content decay</span>.
       </h1>
 
-      <p class="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed">
+      <p class="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
         Connect your Google Search Console in 10 seconds. DecayFix automatically flags posts with a 20%+ traffic drop and gives you specific Claude AI action plans to revive them.
       </p>
 
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
-        <a
-          href="/login"
-          class="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-base shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02]"
-        >
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-          </svg>
-          <span>Sign in with Google</span>
-        </a>
+        {isAuthenticated ? (
+          <a
+            href="/dashboard"
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base shadow-xl shadow-indigo-600/30 transition-all hover:scale-105"
+          >
+            <span>Go to Dashboard</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </a>
+        ) : (
+          <a
+            href="/login"
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-base shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02]"
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+            </svg>
+            <span>Sign in with Google</span>
+          </a>
+        )}
         <a
           href="/pricing"
           class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 font-medium text-base transition-colors"
@@ -43,7 +60,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </div>
 
       <p class="text-xs text-slate-500 mt-4">
-        Free top 5 preview • No subscription required • Read-only Google Search Console access
+        {isAuthenticated
+          ? `Logged in as ${session?.user?.email || 'verified user'} • Ready to audit`
+          : 'Free top 5 preview • No subscription required • Read-only Google Search Console access'}
       </p>
     </div>
   </section>
@@ -195,12 +214,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             </li>
           </ul>
         </div>
-        <a
-          href="/login"
-          class="mt-8 block text-center py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm transition-colors"
-        >
-          Start Free Preview
-        </a>
+        {isAuthenticated ? (
+          <a
+            href="/dashboard"
+            class="mt-8 block text-center py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-colors"
+          >
+            Open Dashboard
+          </a>
+        ) : (
+          <a
+            href="/login"
+            class="mt-8 block text-center py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm transition-colors"
+          >
+            Start Free Preview
+          </a>
+        )}
       </div>
 
       <!-- Paid Unlock Card -->
@@ -234,12 +262,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             </li>
           </ul>
         </div>
-        <a
-          href="/login"
-          class="mt-8 block text-center py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-md shadow-indigo-600/30 transition-all hover:scale-[1.02]"
-        >
-          Sign In & Unlock Report
-        </a>
+        {isAuthenticated ? (
+          <a
+            href="/dashboard"
+            class="mt-8 block text-center py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-600/30 transition-all hover:scale-[1.02]"
+          >
+            Go to Dashboard & Unlock
+          </a>
+        ) : (
+          <a
+            href="/login"
+            class="mt-8 block text-center py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-md shadow-indigo-600/30 transition-all hover:scale-[1.02]"
+          >
+            Sign In & Unlock Report
+          </a>
+        )}
       </div>
     </div>
   </section>
@@ -251,15 +288,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <p class="text-slate-300 max-w-xl mx-auto mb-8 text-sm sm:text-base">
         Connect your Search Console right now and find out which pages need a fast update before they drop further.
       </p>
-      <a
-        href="/login"
-        class="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-slate-950 font-bold text-base hover:bg-slate-100 shadow-xl transition-all hover:scale-105"
-      >
-        <span>Connect Search Console Free</span>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-        </svg>
-      </a>
+      {isAuthenticated ? (
+        <a
+          href="/dashboard"
+          class="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-slate-950 font-bold text-base hover:bg-slate-100 shadow-xl transition-all hover:scale-105"
+        >
+          <span>Launch Your Dashboard</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </a>
+      ) : (
+        <a
+          href="/login"
+          class="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-slate-950 font-bold text-base hover:bg-slate-100 shadow-xl transition-all hover:scale-105"
+        >
+          <span>Connect Search Console Free</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </a>
+      )}
     </div>
   </section>
 </BaseLayout>
