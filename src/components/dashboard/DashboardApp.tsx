@@ -10,8 +10,16 @@ import {
   CheckCircle2, 
   TrendingDown,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  Share2,
+  Copy,
+  Check,
+  Bell,
+  Mail,
+  BarChart3,
+  X
 } from 'lucide-react';
+import Sparkline from '@/components/common/Sparkline';
 
 declare global {
   interface Window {
@@ -77,6 +85,47 @@ export default function DashboardApp({
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(1);
   const [factIndex, setFactIndex] = useState(0);
+
+  // Viral & Productivity states
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showDigestModal, setShowDigestModal] = useState(false);
+  const [copiedPromptUrl, setCopiedPromptUrl] = useState<string | null>(null);
+  const [copiedCardText, setCopiedCardText] = useState(false);
+  const [digestEmail, setDigestEmail] = useState(user.email || '');
+  const [digestEnabled, setDigestEnabled] = useState(true);
+  const [digestSaved, setDigestSaved] = useState(false);
+
+  const handleCopyPrompt = (page: PageItem) => {
+    const prompt = `You are a world-class SEO strategist & content editor.
+I have a decaying blog post on my website that has lost ${page.dropPercentClicks}% of its Google search clicks (dropped from ${page.baselineClicks} to ${page.recentClicks} clicks over recent weeks).
+
+URL: ${page.url}
+Title: ${page.title}
+Key Diagnosis: ${page.aiSuggestion || 'Search intent shift and outdated information'}
+
+Please provide:
+1. An improved, high-CTR Meta Title & Meta Description with current power modifiers.
+2. 3 new H2/H3 subheadings and search intent sections that current top 3 competitors cover.
+3. 5 "People Also Ask" FAQ questions with concise, snippet-ready answers.
+4. Recommended internal linking anchor text and strategic updates to recover lost rankings.`;
+
+    navigator.clipboard.writeText(prompt);
+    setCopiedPromptUrl(page.url);
+    setTimeout(() => setCopiedPromptUrl(null), 2200);
+  };
+
+  const calculateHealthScore = () => {
+    if (analysisResults.length === 0) return 100;
+    const decayedRatio = totalFlagged / Math.max(analysisResults.length, 1);
+    return Math.max(45, Math.round((1 - decayedRatio) * 100));
+  };
+
+  const getHealthGrade = (score: number) => {
+    if (score >= 95) return { grade: 'A+', color: 'text-emerald-400', label: 'Exceptional Freshness' };
+    if (score >= 88) return { grade: 'A', color: 'text-emerald-400', label: 'Healthy Content Base' };
+    if (score >= 75) return { grade: 'B', color: 'text-amber-400', label: 'Moderate Content Decay' };
+    return { grade: 'C-', color: 'text-rose-400', label: 'Severe Traffic Decay' };
+  };
 
   const SEO_FACTS = [
     { icon: '💡', title: 'Quick Win', text: 'Updating outdated statistics & dates on decaying URLs can recover 40–70% of lost search traffic in under 3 weeks.' },
@@ -329,17 +378,33 @@ export default function DashboardApp({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setShowShareModal(true)}
+            className="px-3.5 py-2 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold border border-indigo-500/30 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            <span>Share Health Card</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowDigestModal(true)}
+            className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            <Bell className="w-3.5 h-3.5 text-amber-400" />
+            <span>Weekly Digest</span>
+          </button>
           <a
             href="/billing"
-            className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-colors"
+            className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-colors"
           >
-            Billing & Receipt
+            Billing
           </a>
           <form action="/api/auth/signout" method="POST">
             <button
               type="submit"
-              className="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-medium border border-slate-800 transition-colors cursor-pointer"
+              className="px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-medium border border-slate-800 transition-colors cursor-pointer"
             >
               Sign Out
             </button>
@@ -432,11 +497,12 @@ export default function DashboardApp({
       {/* Results Section */}
       {hasRunAnalysis && (
         <div className="space-y-6">
-          {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Quick Metrics Bar (4-Card High-Impact Layout) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-5 rounded-xl border border-slate-800 bg-slate-900/60">
               <div className="text-xs text-slate-400 font-medium">Pages Analyzed</div>
               <div className="text-2xl font-black text-white mt-1">{analysisResults.length}</div>
+              <div className="text-[11px] text-slate-500 mt-0.5">16-month historical baseline</div>
             </div>
 
             <div className="p-5 rounded-xl border border-rose-500/30 bg-rose-950/20">
@@ -444,6 +510,27 @@ export default function DashboardApp({
                 <TrendingDown className="w-3.5 h-3.5" /> Decaying Posts (≥20% Drop)
               </div>
               <div className="text-2xl font-black text-rose-400 mt-1">{totalFlagged}</div>
+              <div className="text-[11px] text-rose-300/70 mt-0.5">Urgent content refresh required</div>
+            </div>
+
+            {/* SEO Content Health Score Card */}
+            <div 
+              onClick={() => setShowShareModal(true)}
+              className="p-5 rounded-xl border border-indigo-500/40 bg-gradient-to-br from-indigo-950/40 to-slate-900 cursor-pointer hover:border-indigo-400 transition-all group"
+            >
+              <div className="text-xs text-indigo-300 font-medium flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <BarChart3 className="w-3.5 h-3.5 text-indigo-400" /> Content Health
+                </span>
+                <span className="text-[10px] text-indigo-400 font-bold group-hover:underline">Share Card ➔</span>
+              </div>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-2xl font-black text-white">{calculateHealthScore()}%</span>
+                <span className={`text-xs font-bold ${getHealthGrade(calculateHealthScore()).color}`}>
+                  Grade {getHealthGrade(calculateHealthScore()).grade}
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-400 mt-0.5">{getHealthGrade(calculateHealthScore()).label}</div>
             </div>
 
             <div className="p-5 rounded-xl border border-slate-800 bg-slate-900/60">
@@ -454,6 +541,9 @@ export default function DashboardApp({
                 ) : (
                   <span className="text-amber-400 text-lg font-bold">5 of {totalFlagged} Visible</span>
                 )}
+              </div>
+              <div className="text-[11px] text-slate-500 mt-0.5">
+                {isUnlocked ? 'Unlimited AI playbooks' : 'Preview tier active'}
               </div>
             </div>
           </div>
@@ -536,7 +626,7 @@ export default function DashboardApp({
                             {page.title}
                           </h3>
 
-                          {/* Claude AI Suggestion Box */}
+                          {/* Claude AI Suggestion Box with One-Click Prompt Copy */}
                           {isLockedItem ? (
                             <div className="p-4 rounded-xl border border-dashed border-slate-800 bg-slate-900/40 flex items-center justify-between gap-4">
                               <div className="flex items-center gap-3">
@@ -555,10 +645,30 @@ export default function DashboardApp({
                             </div>
                           ) : (
                             page.aiSuggestion && (
-                              <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-950/20 text-xs text-slate-200 space-y-1">
-                                <div className="flex items-center gap-1.5 text-indigo-300 font-semibold mb-1">
-                                  <Sparkles className="w-3.5 h-3.5" />
-                                  <span>AI Recommendation</span>
+                              <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-950/20 text-xs text-slate-200 space-y-2.5">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1.5 text-indigo-300 font-semibold">
+                                    <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                                    <span>AI Refresh Recommendation</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyPrompt(page)}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 hover:text-white text-[11px] font-medium transition-colors cursor-pointer border border-indigo-500/30"
+                                    title="Copy full actionable prompt formatted for ChatGPT/Claude"
+                                  >
+                                    {copiedPromptUrl === page.url ? (
+                                      <>
+                                        <Check className="w-3 h-3 text-emerald-400" />
+                                        <span className="text-emerald-300 font-bold">Prompt Copied!</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy className="w-3 h-3" />
+                                        <span>Copy Prompt for AI</span>
+                                      </>
+                                    )}
+                                  </button>
                                 </div>
                                 <p className="leading-relaxed">{page.aiSuggestion}</p>
                               </div>
@@ -566,14 +676,21 @@ export default function DashboardApp({
                           )}
                         </div>
 
-                        {/* Metrics Column & Detail Button */}
+                        {/* Metrics Column & Sparkline Mini-Chart */}
                         <div className="flex lg:flex-col items-center lg:items-end justify-between gap-4 shrink-0">
-                          <div className="text-right">
-                            <div className="text-xs text-slate-500">Baseline vs Recent Clicks</div>
-                            <div className="text-sm font-bold">
-                              <span className="text-slate-400">{page.baselineClicks}</span>
-                              <span className="text-slate-600 mx-1.5">→</span>
-                              <span className="text-rose-400">{page.recentClicks}</span>
+                          <div className="flex items-center gap-3 text-right">
+                            <Sparkline
+                              baselineClicks={page.baselineClicks}
+                              recentClicks={page.recentClicks}
+                              dropPercent={page.dropPercentClicks}
+                            />
+                            <div>
+                              <div className="text-xs text-slate-500">8-Wk Dip</div>
+                              <div className="text-sm font-bold">
+                                <span className="text-slate-400">{page.baselineClicks}</span>
+                                <span className="text-slate-600 mx-1.5">→</span>
+                                <span className="text-rose-400">{page.recentClicks}</span>
+                              </div>
                             </div>
                           </div>
 
@@ -601,6 +718,170 @@ export default function DashboardApp({
                   );
                 })
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SEO Content Health Score Modal (Spotify Wrapped for SEO) */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-lg rounded-3xl border border-indigo-500/40 bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 p-6 sm:p-8 shadow-2xl space-y-6">
+            <button
+              type="button"
+              onClick={() => setShowShareModal(false)}
+              className="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Visual Spotify-Wrapped Card */}
+            <div className="rounded-2xl border-2 border-indigo-500/60 bg-gradient-to-br from-indigo-950/80 via-slate-900 to-slate-950 p-6 sm:p-8 space-y-6 shadow-xl relative overflow-hidden">
+              <div className="absolute -right-10 -bottom-10 w-40 h-40 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none" />
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-black text-sm">⚡</span>
+                  <span className="font-extrabold text-white text-sm">DecayFix <span className="text-sky-400">Score</span></span>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[11px] font-mono">
+                  {selectedSiteUrl.replace('sc-domain:', '')}
+                </span>
+              </div>
+
+              <div className="text-center py-4 space-y-2">
+                <div className="text-5xl sm:text-6xl font-black text-white tracking-tight">
+                  {calculateHealthScore()}%
+                </div>
+                <div className={`text-sm font-bold tracking-wider uppercase ${getHealthGrade(calculateHealthScore()).color}`}>
+                  Grade {getHealthGrade(calculateHealthScore()).grade} • {getHealthGrade(calculateHealthScore()).label}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800 text-center">
+                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                  <div className="text-[11px] text-slate-400">Decaying Content</div>
+                  <div className="text-lg font-bold text-rose-400">{totalFlagged} Pages</div>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                  <div className="text-[11px] text-slate-400">Healthy Baseline</div>
+                  <div className="text-lg font-bold text-emerald-400">{analysisResults.length - totalFlagged} Pages</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Viral Share Actions */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                    `Just audited my site (${selectedSiteUrl.replace('sc-domain:', '')}) with @DecayFix!\n\n🚀 Content Freshness: ${calculateHealthScore()}%\n⚠️ Decaying Posts: ${totalFlagged}\n\nCheck your Google Search Console decay for free at https://decayfix.com`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#1DA1F2]/20 hover:bg-[#1DA1F2]/30 text-[#1DA1F2] border border-[#1DA1F2]/30 font-semibold text-xs transition-colors"
+                >
+                  <span>Share on X / Twitter</span>
+                </a>
+
+                <a
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://decayfix.com')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#0A66C2]/20 hover:bg-[#0A66C2]/30 text-[#0A66C2] border border-[#0A66C2]/30 font-semibold text-xs transition-colors"
+                >
+                  <span>Share on LinkedIn</span>
+                </a>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const text = `DecayFix SEO Audit for ${selectedSiteUrl.replace('sc-domain:', '')}\nContent Freshness Score: ${calculateHealthScore()}%\nTotal Analyzed: ${analysisResults.length} pages\nDecaying URLs: ${totalFlagged} pages\nAudited via https://decayfix.com`;
+                  navigator.clipboard.writeText(text);
+                  setCopiedCardText(true);
+                  setTimeout(() => setCopiedCardText(false), 2000);
+                }}
+                className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs border border-slate-700 transition-colors inline-flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {copiedCardText ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedCardText ? 'Audit Summary Copied!' : 'Copy Summary Text'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Automated Weekly Decay Digest Modal */}
+      {showDigestModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 sm:p-8 shadow-2xl space-y-6">
+            <button
+              type="button"
+              onClick={() => setShowDigestModal(false)}
+              className="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold uppercase tracking-wider">
+                <Bell className="w-3.5 h-3.5" /> Retention Automation
+              </div>
+              <h3 className="text-xl font-bold text-white">Automated Weekly Decay Digest</h3>
+              <p className="text-xs text-slate-400">
+                Receive an automatic email alert every Monday whenever new URLs suffer a &ge;20% traffic drop.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-medium text-slate-300 block mb-1.5">Notification Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <input
+                    type="email"
+                    value={digestEmail}
+                    onChange={(e) => setDigestEmail(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 text-white text-xs rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-indigo-500"
+                    placeholder="you@company.com"
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-white">Monday Morning Digest</div>
+                  <div className="text-[11px] text-slate-400">Scans {selectedSiteUrl.replace('sc-domain:', '')} weekly</div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={digestEnabled}
+                  onChange={(e) => setDigestEnabled(e.target.checked)}
+                  className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDigestSaved(true);
+                  setTimeout(() => {
+                    setDigestSaved(false);
+                    setShowDigestModal(false);
+                  }, 1500);
+                }}
+                className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/20 transition-all cursor-pointer inline-flex items-center justify-center gap-2"
+              >
+                {digestSaved ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-300" />
+                    <span>Weekly Digest Activated!</span>
+                  </>
+                ) : (
+                  <span>Save Digest Preferences</span>
+                )}
+              </button>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import CompetitorScanner from '@/components/home/CompetitorScanner';
 import { getSession } from '@/lib/session';
 
 const session = await getSession(Astro.request);
@@ -65,6 +66,11 @@ const userName = session?.user?.name?.split(' ')[0] || '';
           : 'Free top 5 preview • No subscription required • Read-only Google Search Console access'}
       </p>
     </div>
+  </section>
+
+  <!-- Competitor Scanner Top-of-Funnel Island -->
+  <section class="max-w-4xl mx-auto px-4 sm:px-6 -mt-10 mb-20">
+    <CompetitorScanner client:visible />
   </section>
 
   <!-- Visual Mockup Showcase (Zero JS Static) -->

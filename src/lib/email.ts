@@ -74,3 +74,36 @@ export async function sendUnlockConfirmationEmail(params: {
     return { success: false, error: error?.message };
   }
 }
+
+export async function sendEmail(params: {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+}) {
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey || apiKey.startsWith('re_dummy') || apiKey === '') {
+    console.log(`[Resend Mock Email] To: ${params.to} | Subject: ${params.subject}`);
+    return { success: true, mock: true };
+  }
+
+  try {
+    const resend = new Resend(apiKey);
+    const fromAddress = process.env.RESEND_FROM_EMAIL || 'DecayFix <reports@decayfix.com>';
+
+    const result = await resend.emails.send({
+      from: fromAddress,
+      to: params.to,
+      subject: params.subject,
+      html: params.html,
+      text: params.text || params.subject,
+    });
+
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error('Failed to send Resend email:', error?.message || error);
+    return { success: false, error: error?.message };
+  }
+}
+
