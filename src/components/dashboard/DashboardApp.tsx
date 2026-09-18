@@ -85,6 +85,7 @@ export default function DashboardApp({
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(1);
   const [factIndex, setFactIndex] = useState(0);
+  const [currentAiCookingUrl, setCurrentAiCookingUrl] = useState<string | null>(null);
 
   // Viral & Productivity states
   const [showShareModal, setShowShareModal] = useState(false);
@@ -181,6 +182,109 @@ Please provide:
       console.warn('[DecayFix] Could not restore analysis from sessionStorage:', e);
     }
   }, [user.id]);
+
+  // Progressive One-by-One AI Action Plan Generator
+  useEffect(() => {
+    if (!hasRunAnalysis || analyzing) return;
+
+    // Find the next eligible flagged page that needs an AI suggestion
+    const ungeneratedPage = analysisResults.find(
+      (p) => p.isFlagged && !p.isLocked && (!p.aiSuggestion || p.aiSuggestion.trim() === '')
+    );
+
+    if (!ungeneratedPage) {
+      setCurrentAiCookingUrl(null);
+      return;
+    }
+
+    if (currentAiCookingUrl === ungeneratedPage.url) return;
+
+    let isMounted = true;
+    setCurrentAiCookingUrl(ungeneratedPage.url);
+
+    const fetchSingleSuggestion = async () => {
+      try {
+        const res = await fetch('/api/ai/suggest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: ungeneratedPage.url,
+            title: ungeneratedPage.title,
+            baselineClicks: ungeneratedPage.baselineClicks,
+            recentClicks: ungeneratedPage.recentClicks,
+            dropPercentClicks: ungeneratedPage.dropPercentClicks,
+            dropPercentImpressions: ungeneratedPage.dropPercentImpressions,
+            siteUrl: selectedSiteUrl || customSiteInput,
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error('Failed to generate AI suggestion');
+        }
+
+        const data = await res.json();
+        if (!isMounted) return;
+
+        if (data.aiSuggestion) {
+          setAnalysisResults((prev) => {
+            const updated = prev.map((item) =>
+              item.url === ungeneratedPage.url
+                ? { ...item, aiSuggestion: data.aiSuggestion }
+                : item
+            );
+
+            // Persist updated suggestions to sessionStorage immediately
+            try {
+              const cacheKey = `decayfix_state_${user.id || 'current'}`;
+              sessionStorage.setItem(
+                cacheKey,
+                JSON.stringify({
+                  siteUrl: selectedSiteUrl || customSiteInput,
+                  results: updated,
+                  totalFlagged,
+                  lockedCount,
+                  isUnlocked,
+                  timestamp: Date.now(),
+                })
+              );
+            } catch (cacheErr) {
+              console.warn('[DecayFix] SessionStorage write error:', cacheErr);
+            }
+
+            return updated;
+          });
+        }
+      } catch (err) {
+        console.warn('[DecayFix] AI suggestion error for', ungeneratedPage.url, err);
+        // Apply instant smart fallback so generation queue doesn't hang
+        if (isMounted) {
+          const fallbackText =
+            ungeneratedPage.dropPercentClicks >= 50
+              ? `Major search intent shift detected. Audit the current top 3 Google SERP competitors for "${ungeneratedPage.title || 'this topic'}" to identify newly added sections, update all dates/screenshots to the current year, and rewrite the introductory hook with high-CTR action words.`
+              : `Search impressions have softened. Refresh outdated statistics, expand thin sections with recent examples, add a targeted FAQ section answering "People Also Ask" queries, and test an updated title tag with current year modifiers.`;
+
+          setAnalysisResults((prev) => {
+            const updated = prev.map((item) =>
+              item.url === ungeneratedPage.url
+                ? { ...item, aiSuggestion: fallbackText }
+                : item
+            );
+            return updated;
+          });
+        }
+      } finally {
+        if (isMounted) {
+          setCurrentAiCookingUrl(null);
+        }
+      }
+    };
+
+    fetchSingleSuggestion();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [analysisResults, hasRunAnalysis, analyzing, currentAiCookingUrl, selectedSiteUrl, customSiteInput, user.id, totalFlagged, lockedCount, isUnlocked]);
 
   // Load Razorpay Checkout script dynamically & fetch live GSC properties
   useEffect(() => {
@@ -574,152 +678,242 @@ Please provide:
             </div>
           )}
 
-          {/* Table / List of Flagged Pages */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-xl">
-            <div className="px-6 py-4 border-b border-slate-800 bg-slate-950/50 flex items-center justify-between">
-              <span className="text-sm font-bold text-white uppercase tracking-wider">
-                Flagged Decaying Posts (Ranked by Severity)
-              </span>
-              <span className="text-xs text-slate-400">
-                Sorted by highest lost clicks & % drop
-              </span>
-            </div>
+          {/* Eligible Flagged Pages Progressive AI Calculations */}
+          {(() => {
+            const eligibleFlaggedPages = analysisResults.filter((p) => p.isFlagged && !p.isLocked);
+            const completedAiPages = eligibleFlaggedPages.filter((p) => p.aiSuggestion && p.aiSuggestion.trim() !== '');
+            const isGeneratingAi = eligibleFlaggedPages.length > 0 && completedAiPages.length < eligibleFlaggedPages.length;
+            const aiProgressPct = eligibleFlaggedPages.length > 0 ? Math.round((completedAiPages.length / eligibleFlaggedPages.length) * 100) : 100;
 
-            <div className="divide-y divide-slate-800">
-              {analysisResults.length === 0 ? (
-                <div className="p-12 text-center text-slate-400">
-                  <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-                  <p className="font-semibold text-white">Great news! No severe decay detected.</p>
-                  <p className="text-xs mt-1">All pages are maintaining their 8-week baseline traffic.</p>
-                </div>
-              ) : (
-                analysisResults.map((page, index) => {
-                  const isLockedItem = page.isLocked;
-
-                  return (
-                    <div
-                      key={page.url}
-                      className={`p-6 transition-colors ${
-                        isLockedItem
-                          ? 'bg-slate-950/40 relative select-none'
-                          : 'hover:bg-slate-800/40'
-                      }`}
-                    >
-                      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
-                        {/* Page Info & AI Suggestion */}
-                        <div className="flex-1 space-y-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-bold">
-                              -{page.dropPercentClicks}% Clicks
+            return (
+              <>
+                {/* Live Progressive AI Generation Status Banner */}
+                {eligibleFlaggedPages.length > 0 && (
+                  <div className={`p-4 rounded-xl border transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg ${
+                    isGeneratingAi
+                      ? 'bg-indigo-950/40 border-indigo-500/40 text-indigo-200 shadow-indigo-500/5'
+                      : 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300 shadow-emerald-500/5'
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      {isGeneratingAi ? (
+                        <div className="relative flex items-center justify-center w-6 h-6 shrink-0">
+                          <Sparkles className="w-4 h-4 text-indigo-400 animate-spin" />
+                          <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                          </span>
+                        </div>
+                      ) : (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                      )}
+                      <div>
+                        <div className="text-xs font-bold flex items-center gap-2">
+                          <span>
+                            {isGeneratingAi
+                              ? `Generating AI Action Plans: ${completedAiPages.length} of ${eligibleFlaggedPages.length} ready`
+                              : `All ${eligibleFlaggedPages.length} AI Action Plans Generated & Ready!`}
+                          </span>
+                          {isGeneratingAi && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-normal border border-indigo-500/30">
+                              Cooking live one-by-one
                             </span>
-                            {page.dropPercentImpressions > 0 && (
-                              <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-xs font-medium">
-                                -{page.dropPercentImpressions}% Impressions
-                              </span>
-                            )}
-                            <span className="text-xs text-slate-400 font-mono break-all">
-                              {page.url}
-                            </span>
-                          </div>
-
-                          <h3 className="text-lg font-bold text-white">
-                            {page.title}
-                          </h3>
-
-                          {/* Claude AI Suggestion Box with One-Click Prompt Copy */}
-                          {isLockedItem ? (
-                            <div className="p-4 rounded-xl border border-dashed border-slate-800 bg-slate-900/40 flex items-center justify-between gap-4">
-                              <div className="flex items-center gap-3">
-                                <Lock className="w-4 h-4 text-slate-500 shrink-0" />
-                                <span className="text-xs text-slate-400 font-medium filter blur-[3px]">
-                                  Update key search intent, refresh the outdated 2024 comparisons, and rewrite the meta description with high-CTR power keywords.
-                                </span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={handleCheckout}
-                                className="text-xs font-bold text-indigo-400 hover:text-indigo-300 shrink-0 cursor-pointer"
-                              >
-                                Unlock →
-                              </button>
-                            </div>
-                          ) : (
-                            page.aiSuggestion && (
-                              <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-950/20 text-xs text-slate-200 space-y-2.5">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-1.5 text-indigo-300 font-semibold">
-                                    <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                                    <span>AI Refresh Recommendation</span>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleCopyPrompt(page)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 hover:text-white text-[11px] font-medium transition-colors cursor-pointer border border-indigo-500/30"
-                                    title="Copy full actionable prompt formatted for ChatGPT/Claude"
-                                  >
-                                    {copiedPromptUrl === page.url ? (
-                                      <>
-                                        <Check className="w-3 h-3 text-emerald-400" />
-                                        <span className="text-emerald-300 font-bold">Prompt Copied!</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Copy className="w-3 h-3" />
-                                        <span>Copy Prompt for AI</span>
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-                                <p className="leading-relaxed">{page.aiSuggestion}</p>
-                              </div>
-                            )
                           )}
                         </div>
-
-                        {/* Metrics Column & Sparkline Mini-Chart */}
-                        <div className="flex lg:flex-col items-center lg:items-end justify-between gap-4 shrink-0">
-                          <div className="flex items-center gap-3 text-right">
-                            <Sparkline
-                              baselineClicks={page.baselineClicks}
-                              recentClicks={page.recentClicks}
-                              dropPercent={page.dropPercentClicks}
-                            />
-                            <div>
-                              <div className="text-xs text-slate-500">8-Wk Dip</div>
-                              <div className="text-sm font-bold">
-                                <span className="text-slate-400">{page.baselineClicks}</span>
-                                <span className="text-slate-600 mx-1.5">→</span>
-                                <span className="text-rose-400">{page.recentClicks}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {!isLockedItem ? (
-                            <a
-                              href={`/dashboard/page/${encodeURIComponent(page.url)}`}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 transition-colors"
-                            >
-                              <span>View Detail</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </a>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={handleCheckout}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-xs font-medium text-indigo-300 border border-indigo-500/30 cursor-pointer"
-                            >
-                              <Lock className="w-3 h-3" />
-                              <span>Locked</span>
-                            </button>
-                          )}
-                        </div>
+                        <p className="text-[11px] opacity-75 mt-0.5">
+                          {isGeneratingAi
+                            ? 'Your decayed pages are ready instantly below. AI recovery playbooks are generating sequentially in real-time.'
+                            : 'Copy ready-to-use prompts formatted for ChatGPT, Claude, or your content writers.'}
+                        </p>
                       </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
+
+                    {isGeneratingAi && (
+                      <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
+                        <span className="text-[11px] font-mono text-indigo-300 font-bold">{aiProgressPct}%</span>
+                        <div className="w-28 sm:w-36 bg-slate-950 rounded-full h-2 border border-slate-700 overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-indigo-500 to-sky-400 h-full transition-all duration-500 rounded-full"
+                            style={{ width: `${aiProgressPct}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Table / List of Flagged Pages */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-xl">
+                  <div className="px-6 py-4 border-b border-slate-800 bg-slate-950/50 flex items-center justify-between">
+                    <span className="text-sm font-bold text-white uppercase tracking-wider">
+                      Flagged Decaying Posts (Ranked by Severity)
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      Sorted by highest lost clicks & % drop
+                    </span>
+                  </div>
+
+                  <div className="divide-y divide-slate-800">
+                    {analysisResults.length === 0 ? (
+                      <div className="p-12 text-center text-slate-400">
+                        <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+                        <p className="font-semibold text-white">Great news! No severe decay detected.</p>
+                        <p className="text-xs mt-1">All pages are maintaining their 8-week baseline traffic.</p>
+                      </div>
+                    ) : (
+                      analysisResults.map((page, index) => {
+                        const isLockedItem = page.isLocked;
+
+                        return (
+                          <div
+                            key={page.url}
+                            className={`p-6 transition-colors ${
+                              isLockedItem
+                                ? 'bg-slate-950/40 relative select-none'
+                                : 'hover:bg-slate-800/40'
+                            }`}
+                          >
+                            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+                              {/* Page Info & AI Suggestion */}
+                              <div className="flex-1 space-y-3">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-bold">
+                                    -{page.dropPercentClicks}% Clicks
+                                  </span>
+                                  {page.dropPercentImpressions > 0 && (
+                                    <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-xs font-medium">
+                                      -{page.dropPercentImpressions}% Impressions
+                                    </span>
+                                  )}
+                                  <span className="text-xs text-slate-400 font-mono break-all">
+                                    {page.url}
+                                  </span>
+                                </div>
+
+                                <h3 className="text-lg font-bold text-white">
+                                  {page.title}
+                                </h3>
+
+                                {/* Claude AI Suggestion Box with One-Click Prompt Copy */}
+                                {isLockedItem ? (
+                                  <div className="p-4 rounded-xl border border-dashed border-slate-800 bg-slate-900/40 flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-3">
+                                      <Lock className="w-4 h-4 text-slate-500 shrink-0" />
+                                      <span className="text-xs text-slate-400 font-medium filter blur-[3px]">
+                                        Update key search intent, refresh the outdated 2024 comparisons, and rewrite the meta description with high-CTR power keywords.
+                                      </span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={handleCheckout}
+                                      className="text-xs font-bold text-indigo-400 hover:text-indigo-300 shrink-0 cursor-pointer"
+                                    >
+                                      Unlock →
+                                    </button>
+                                  </div>
+                                ) : page.aiSuggestion ? (
+                                  <div className="p-4 rounded-xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/30 via-slate-900 to-indigo-950/10 text-xs text-slate-200 space-y-2.5 animate-fadeIn">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-1.5 text-indigo-300 font-semibold">
+                                        <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                                        <span>AI Refresh Recommendation</span>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleCopyPrompt(page)}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 hover:text-white text-[11px] font-medium transition-colors cursor-pointer border border-indigo-500/30"
+                                        title="Copy full actionable prompt formatted for ChatGPT/Claude"
+                                      >
+                                        {copiedPromptUrl === page.url ? (
+                                          <>
+                                            <Check className="w-3 h-3 text-emerald-400" />
+                                            <span className="text-emerald-300 font-bold">Prompt Copied!</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Copy className="w-3 h-3" />
+                                            <span>Copy Prompt for AI</span>
+                                          </>
+                                        )}
+                                      </button>
+                                    </div>
+                                    <p className="leading-relaxed">{page.aiSuggestion}</p>
+                                  </div>
+                                ) : currentAiCookingUrl === page.url ? (
+                                  <div className="p-4 rounded-xl border border-indigo-500/50 bg-gradient-to-r from-indigo-950/40 via-slate-900 to-indigo-950/30 text-xs text-slate-300 space-y-2.5 relative overflow-hidden animate-pulse shadow-lg shadow-indigo-500/5">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2 text-indigo-300 font-semibold">
+                                        <Sparkles className="w-4 h-4 text-indigo-400 animate-spin" />
+                                        <span>Cooking AI Action Plan...</span>
+                                      </div>
+                                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono font-medium border border-indigo-500/30">
+                                        Analyzing SERP Intent
+                                      </span>
+                                    </div>
+                                    <div className="space-y-1.5 pt-1">
+                                      <div className="h-2.5 bg-indigo-500/25 rounded-md w-11/12 animate-pulse" />
+                                      <div className="h-2.5 bg-indigo-500/15 rounded-md w-3/4 animate-pulse" />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="p-3.5 rounded-xl border border-slate-800/80 bg-slate-950/40 text-xs text-slate-400 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <Sparkles className="w-3.5 h-3.5 text-slate-500" />
+                                      <span className="text-slate-400">Queued for AI Action Plan generation</span>
+                                    </div>
+                                    <span className="text-[10px] text-slate-500 font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-slate-900 border border-slate-800">
+                                      In Queue
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Metrics Column & Sparkline Mini-Chart */}
+                              <div className="flex lg:flex-col items-center lg:items-end justify-between gap-4 shrink-0">
+                                <div className="flex items-center gap-3 text-right">
+                                  <Sparkline
+                                    baselineClicks={page.baselineClicks}
+                                    recentClicks={page.recentClicks}
+                                    dropPercent={page.dropPercentClicks}
+                                  />
+                                  <div>
+                                    <div className="text-xs text-slate-500">8-Wk Dip</div>
+                                    <div className="text-sm font-bold">
+                                      <span className="text-slate-400">{page.baselineClicks}</span>
+                                      <span className="text-slate-600 mx-1.5">→</span>
+                                      <span className="text-rose-400">{page.recentClicks}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {!isLockedItem ? (
+                                  <a
+                                    href={`/dashboard/page/${encodeURIComponent(page.url)}`}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 transition-colors"
+                                  >
+                                    <span>View Detail</span>
+                                    <ChevronRight className="w-3.5 h-3.5" />
+                                  </a>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={handleCheckout}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-xs font-medium text-indigo-300 border border-indigo-500/30 cursor-pointer"
+                                  >
+                                    <Lock className="w-3 h-3" />
+                                    <span>Locked</span>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </>
+            );
+          })()}
         </div>
       )}
 

@@ -125,36 +125,12 @@ export const POST: APIRoute = async ({ request }) => {
     // 4. Run decay analysis on real Search Console data
     const analyzedResults = analyzeTrafficDecay(recentMetrics, baselineMetrics);
 
-    // 5. Generate AI suggestions concurrently in parallel (Fast Sub-3s Analysis)
-    const maxAiSuggestions = entitlement.isUnlocked ? analyzedResults.length : FREE_TIER_PAGE_LIMIT;
-
-    const processedPages = await Promise.all(
-      analyzedResults.map(async (pageItem, idx) => {
-        let suggestion = null;
-
-        // Generate AI suggestions for flagged pages within user's tier
-        if (pageItem.isFlagged && idx < maxAiSuggestions) {
-          try {
-            suggestion = await generateContentSuggestion({
-              url: pageItem.url,
-              title: pageItem.title,
-              baselineClicks: pageItem.baselineClicks,
-              recentClicks: pageItem.recentClicks,
-              dropPercentClicks: pageItem.dropPercentClicks,
-              dropPercentImpressions: pageItem.dropPercentImpressions,
-            });
-          } catch (aiErr) {
-            console.warn('AI suggestion error for', pageItem.url, aiErr);
-          }
-        }
-
-        return {
-          ...pageItem,
-          aiSuggestion: suggestion,
-          flaggedAt: pageItem.isFlagged ? new Date() : null,
-        };
-      })
-    );
+    // 5. Map processed pages instantly (AI suggestions stream in progressively one-by-one)
+    const processedPages = analyzedResults.map((pageItem) => ({
+      ...pageItem,
+      aiSuggestion: null,
+      flaggedAt: pageItem.isFlagged ? new Date() : null,
+    }));
 
     // 6. Save results to database if available
     if (db && siteRecord) {
