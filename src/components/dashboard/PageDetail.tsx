@@ -224,6 +224,7 @@ Please generate a comprehensive, ready-to-publish content refresh:
           </button>
         </div>
       ) : (
+        <div className="space-y-8">
           {/* Free Demo Preview Badge */}
           {pageData.isFreeDemo && (
             <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-indigo-950/60 border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-4">
