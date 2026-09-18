@@ -183,9 +183,12 @@ Please provide:
     }
   }, [user.id]);
 
+  const isCookingRef = React.useRef(false);
+
   // Progressive One-by-One AI Action Plan Generator
   useEffect(() => {
     if (!hasRunAnalysis || analyzing) return;
+    if (isCookingRef.current) return;
 
     // Find the next eligible flagged page that needs an AI suggestion
     const ungeneratedPage = analysisResults.find(
@@ -193,13 +196,13 @@ Please provide:
     );
 
     if (!ungeneratedPage) {
-      setCurrentAiCookingUrl(null);
+      if (currentAiCookingUrl !== null) {
+        setCurrentAiCookingUrl(null);
+      }
       return;
     }
 
-    if (currentAiCookingUrl === ungeneratedPage.url) return;
-
-    let isMounted = true;
+    isCookingRef.current = true;
     setCurrentAiCookingUrl(ungeneratedPage.url);
 
     const fetchSingleSuggestion = async () => {
@@ -218,73 +221,70 @@ Please provide:
           }),
         });
 
-        if (!res.ok) {
-          throw new Error('Failed to generate AI suggestion');
+        let suggestionText = '';
+        if (res.ok) {
+          const data = await res.json();
+          suggestionText = data.aiSuggestion || '';
         }
 
-        const data = await res.json();
-        if (!isMounted) return;
-
-        if (data.aiSuggestion) {
-          setAnalysisResults((prev) => {
-            const updated = prev.map((item) =>
-              item.url === ungeneratedPage.url
-                ? { ...item, aiSuggestion: data.aiSuggestion }
-                : item
-            );
-
-            // Persist updated suggestions to sessionStorage immediately
-            try {
-              const cacheKey = `decayfix_state_${user.id || 'current'}`;
-              sessionStorage.setItem(
-                cacheKey,
-                JSON.stringify({
-                  siteUrl: selectedSiteUrl || customSiteInput,
-                  results: updated,
-                  totalFlagged,
-                  lockedCount,
-                  isUnlocked,
-                  timestamp: Date.now(),
-                })
-              );
-            } catch (cacheErr) {
-              console.warn('[DecayFix] SessionStorage write error:', cacheErr);
-            }
-
-            return updated;
-          });
-        }
-      } catch (err) {
-        console.warn('[DecayFix] AI suggestion error for', ungeneratedPage.url, err);
-        // Apply instant smart fallback so generation queue doesn't hang
-        if (isMounted) {
-          const fallbackText =
+        if (!suggestionText) {
+          // Instant heuristic fallback if API returns empty
+          suggestionText =
             ungeneratedPage.dropPercentClicks >= 50
               ? `Major search intent shift detected. Audit the current top 3 Google SERP competitors for "${ungeneratedPage.title || 'this topic'}" to identify newly added sections, update all dates/screenshots to the current year, and rewrite the introductory hook with high-CTR action words.`
               : `Search impressions have softened. Refresh outdated statistics, expand thin sections with recent examples, add a targeted FAQ section answering "People Also Ask" queries, and test an updated title tag with current year modifiers.`;
+        }
 
-          setAnalysisResults((prev) => {
-            const updated = prev.map((item) =>
-              item.url === ungeneratedPage.url
-                ? { ...item, aiSuggestion: fallbackText }
-                : item
+        setAnalysisResults((prev) => {
+          const updated = prev.map((item) =>
+            item.url === ungeneratedPage.url
+              ? { ...item, aiSuggestion: suggestionText }
+              : item
+          );
+
+          // Persist updated suggestions to sessionStorage immediately
+          try {
+            const cacheKey = `decayfix_state_${user.id || 'current'}`;
+            sessionStorage.setItem(
+              cacheKey,
+              JSON.stringify({
+                siteUrl: selectedSiteUrl || customSiteInput,
+                results: updated,
+                totalFlagged,
+                lockedCount,
+                isUnlocked,
+                timestamp: Date.now(),
+              })
             );
-            return updated;
-          });
-        }
+          } catch (cacheErr) {
+            console.warn('[DecayFix] SessionStorage write error:', cacheErr);
+          }
+
+          return updated;
+        });
+      } catch (err) {
+        console.warn('[DecayFix] AI suggestion error for', ungeneratedPage.url, err);
+        const fallbackText =
+          ungeneratedPage.dropPercentClicks >= 50
+            ? `Major search intent shift detected. Audit the current top 3 Google SERP competitors for "${ungeneratedPage.title || 'this topic'}" to identify newly added sections, update all dates/screenshots to the current year, and rewrite the introductory hook with high-CTR action words.`
+            : `Search impressions have softened. Refresh outdated statistics, expand thin sections with recent examples, add a targeted FAQ section answering "People Also Ask" queries, and test an updated title tag with current year modifiers.`;
+
+        setAnalysisResults((prev) => {
+          const updated = prev.map((item) =>
+            item.url === ungeneratedPage.url
+              ? { ...item, aiSuggestion: fallbackText }
+              : item
+          );
+          return updated;
+        });
       } finally {
-        if (isMounted) {
-          setCurrentAiCookingUrl(null);
-        }
+        isCookingRef.current = false;
+        setCurrentAiCookingUrl(null);
       }
     };
 
     fetchSingleSuggestion();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [analysisResults, hasRunAnalysis, analyzing, currentAiCookingUrl, selectedSiteUrl, customSiteInput, user.id, totalFlagged, lockedCount, isUnlocked]);
+  }, [analysisResults, hasRunAnalysis, analyzing, selectedSiteUrl, customSiteInput, user.id, totalFlagged, lockedCount, isUnlocked]);
 
   // Load Razorpay Checkout script dynamically & fetch live GSC properties
   useEffect(() => {

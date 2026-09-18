@@ -47,6 +47,7 @@ Keep your response strictly under 3 sentences. Output only the advice directly w
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: { maxOutputTokens: 500, temperature: 0.3 },
             }),
+            signal: AbortSignal.timeout(6000),
           }
         );
         const data = await response.json();
@@ -76,6 +77,7 @@ Keep your response strictly under 3 sentences. Output only the advice directly w
           max_tokens: 250,
           temperature: 0.3,
         }),
+        signal: AbortSignal.timeout(6000),
       });
       const data = await response.json();
       const text = data?.choices?.[0]?.message?.content;
