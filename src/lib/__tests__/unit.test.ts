@@ -1,62 +1,165 @@
-import { analyzeTrafficDecay, extractTitleFromUrl } from '../analyzer';
+import {
+  analyzeTrafficDecay,
+  extractTitleFromUrl,
+  canonicalizeUrl,
+  aggregateCanonicalMetrics,
+  calculateSeverityWeightedHealthScore,
+} from '../analyzer';
 import { gateAnalyzedPages } from '../entitlement';
 import { verifyRazorpayWebhookSignature } from '../crypto';
-import { DECAY_THRESHOLD_PERCENT, FREE_TIER_PAGE_LIMIT } from '../constants';
+import {
+  DECAY_THRESHOLD_PERCENT,
+  FREE_TIER_PAGE_LIMIT,
+  MIN_BASELINE_CLICKS,
+  MIN_BASELINE_IMPRESSIONS,
+} from '../constants';
 import crypto from 'node:crypto';
 
 function runTests() {
-  console.log('--- Running DecayFix Unit Tests ---');
+  console.log('========================================');
+  console.log('   DecayFix Core Engine Unit Tests      ');
+  console.log('========================================\n');
 
-  // Test 1: Title extraction
+  // Test 1: URL Title Extraction & Cleanup
   const title1 = extractTitleFromUrl('https://example.com/blog/best-seo-tools-2024');
-  console.assert(title1 === 'Best Seo Tools 2024', `Test 1 failed: got ${title1}`);
-  console.log('✓ Test 1: URL title extraction passed');
+  console.assert(title1 === 'Best Seo Tools 2024', `Test 1.1 failed: got ${title1}`);
+  const title2 = extractTitleFromUrl('https://godamwala.com/lease/71');
+  console.assert(title2 === 'Lease Property #71', `Test 1.2 failed: got ${title2}`);
+  const title3 = extractTitleFromUrl('https://example.com/warehouse-10000sqft-delhi');
+  console.assert(title3 === 'Warehouse (10000 Sqft) Delhi', `Test 1.3 failed: got ${title3}`);
+  console.log('✓ Test 1: URL title slug parsing and formatting passed');
 
-  // Test 2: Decay Analyzer with >= 20% drop threshold
-  const baseline = new Map([
-    ['https://example.com/decaying-post', { url: 'https://example.com/decaying-post', clicks: 100, impressions: 2000, ctr: 0.05, position: 5.0 }],
-    ['https://example.com/healthy-post', { url: 'https://example.com/healthy-post', clicks: 100, impressions: 2000, ctr: 0.05, position: 5.0 }],
+  // Test 2: URL Canonicalization
+  const rawUrl1 = 'https://www.example.com/blog/seo-tips/?utm_source=twitter&utm_medium=social&gclid=123#header';
+  const canon1 = canonicalizeUrl(rawUrl1);
+  console.assert(canon1 === 'https://example.com/blog/seo-tips', `Test 2.1 failed: got ${canon1}`);
+
+  const rawUrl2 = 'http://example.com/products/warehouse/?sessionId=xyz&ref=partner';
+  const canon2 = canonicalizeUrl(rawUrl2);
+  console.assert(canon2 === 'https://example.com/products/warehouse', `Test 2.2 failed: got ${canon2}`);
+  console.log('✓ Test 2: URL canonicalization (tracking strip, trailing slash, www strip) passed');
+
+  // Test 3: Canonical Metric Aggregation
+  const fragmentedMetrics = new Map([
+    ['https://example.com/lease?city=delhi&utm_source=ad', { url: 'https://example.com/lease?city=delhi&utm_source=ad', clicks: 20, impressions: 500, ctr: 0.04, position: 4.0 }],
+    ['https://www.example.com/lease?city=delhi', { url: 'https://www.example.com/lease?city=delhi', clicks: 30, impressions: 500, ctr: 0.06, position: 2.0 }],
+  ]);
+  const aggregated = aggregateCanonicalMetrics(fragmentedMetrics);
+  console.assert(aggregated.size === 1, `Test 3.1 failed: expected 1 collapsed URL, got ${aggregated.size}`);
+  const aggEntry = aggregated.get('https://example.com/lease?city=delhi');
+  console.assert(aggEntry !== undefined, 'Test 3.2 failed: canonical URL key not found');
+  console.assert(aggEntry?.clicks === 50, `Test 3.3 failed: expected 50 aggregated clicks, got ${aggEntry?.clicks}`);
+  console.assert(aggEntry?.impressions === 1000, `Test 3.4 failed: expected 1000 aggregated impressions, got ${aggEntry?.impressions}`);
+  console.assert(aggEntry?.position === 3.0, `Test 3.5 failed: expected weighted position 3.0, got ${aggEntry?.position}`);
+  console.log('✓ Test 3: Canonical metric aggregation passed');
+
+  // Test 4: Volume Floor Filtering (MIN_BASELINE_CLICKS = 30, MIN_BASELINE_IMPRESSIONS = 300)
+  const lowVolumeBaseline = new Map([
+    // Below both volume floors: 10 clicks, 50 impressions (drop 50%) -> should NOT flag
+    ['https://example.com/low-volume-dead', { url: 'https://example.com/low-volume-dead', clicks: 10, impressions: 50, ctr: 0.2, position: 10.0 }],
+    // Meets clicks floor (40 clicks >= 30) -> should flag
+    ['https://example.com/meets-clicks-floor', { url: 'https://example.com/meets-clicks-floor', clicks: 40, impressions: 200, ctr: 0.2, position: 5.0 }],
+    // Meets impressions floor (500 imp >= 300) -> should flag
+    ['https://example.com/meets-imp-floor', { url: 'https://example.com/meets-imp-floor', clicks: 15, impressions: 500, ctr: 0.03, position: 8.0 }],
   ]);
 
-  const recent = new Map([
-    ['https://example.com/decaying-post', { url: 'https://example.com/decaying-post', clicks: 70, impressions: 1400, ctr: 0.05, position: 8.0 }], // 30% drop -> decaying
-    ['https://example.com/healthy-post', { url: 'https://example.com/healthy-post', clicks: 95, impressions: 1950, ctr: 0.05, position: 5.2 }],  // 5% drop -> healthy
+  const lowVolumeRecent = new Map([
+    ['https://example.com/low-volume-dead', { url: 'https://example.com/low-volume-dead', clicks: 5, impressions: 25, ctr: 0.2, position: 12.0 }],
+    ['https://example.com/meets-clicks-floor', { url: 'https://example.com/meets-clicks-floor', clicks: 20, impressions: 100, ctr: 0.2, position: 8.0 }],
+    ['https://example.com/meets-imp-floor', { url: 'https://example.com/meets-imp-floor', clicks: 5, impressions: 200, ctr: 0.025, position: 14.0 }],
   ]);
 
-  const analyzed = analyzeTrafficDecay(recent, baseline, DECAY_THRESHOLD_PERCENT);
-  console.assert(analyzed.length === 2, `Expected 2 analyzed pages, got ${analyzed.length}`);
-  const decaying = analyzed.find(p => p.url === 'https://example.com/decaying-post');
-  const healthy = analyzed.find(p => p.url === 'https://example.com/healthy-post');
+  const volumeAnalyzed = analyzeTrafficDecay(lowVolumeRecent, lowVolumeBaseline);
+  const deadPage = volumeAnalyzed.find(p => p.url === 'https://example.com/low-volume-dead');
+  const meetsClicksPage = volumeAnalyzed.find(p => p.url === 'https://example.com/meets-clicks-floor');
+  const meetsImpPage = volumeAnalyzed.find(p => p.url === 'https://example.com/meets-imp-floor');
 
-  console.assert(decaying?.isFlagged === true, 'Decaying post should be flagged (30% drop >= 20%)');
-  console.assert(decaying?.dropPercentClicks === 30, `Expected 30% drop, got ${decaying?.dropPercentClicks}`);
-  console.assert(healthy?.isFlagged === false, 'Healthy post should not be flagged (5% drop < 20%)');
-  console.log('✓ Test 2: Traffic decay 20% threshold detection passed');
+  console.assert(deadPage?.isFlagged === false, 'Low volume dead page (10 clicks / 50 imp) must NOT be flagged');
+  console.assert(meetsClicksPage?.isFlagged === true, 'Page with >= 30 baseline clicks must be flagged on 50% drop');
+  console.assert(meetsImpPage?.isFlagged === true, 'Page with >= 300 baseline impressions must be flagged on 60% drop');
+  console.log('✓ Test 4: Minimum volume floor guards passed');
 
-  // Test 3: Server-side Entitlement / Gating (Free vs Paid)
+  // Test 5: Growth Guard Protection (Pages with increasing traffic are not flagged)
+  const growthBaseline = new Map([
+    ['https://example.com/growing-post', { url: 'https://example.com/growing-post', clicks: 100, impressions: 2000, ctr: 0.05, position: 4.0 }],
+  ]);
+  const growthRecent = new Map([
+    ['https://example.com/growing-post', { url: 'https://example.com/growing-post', clicks: 130, impressions: 2600, ctr: 0.05, position: 6.5 }],
+  ]);
+  const growthAnalyzed = analyzeTrafficDecay(growthRecent, growthBaseline);
+  console.assert(growthAnalyzed[0].isFlagged === false, 'Growing post (+30% clicks) must NOT be flagged as decaying');
+  console.assert(growthAnalyzed[0].clicksLost === 0, 'Growing post clicksLost must be 0');
+  console.log('✓ Test 5: Growth guard protection passed');
+
+  // Test 6: Absolute Clicks Lost Primary Ranking
+  const rankingBaseline = new Map([
+    // Page A: high volume, 30% drop -> 150 clicks lost
+    ['https://example.com/high-loss-page', { url: 'https://example.com/high-loss-page', clicks: 500, impressions: 10000, ctr: 0.05, position: 3.0 }],
+    // Page B: lower volume, 80% drop -> 40 clicks lost
+    ['https://example.com/high-percent-lower-loss', { url: 'https://example.com/high-percent-lower-loss', clicks: 50, impressions: 1000, ctr: 0.05, position: 4.0 }],
+  ]);
+  const rankingRecent = new Map([
+    ['https://example.com/high-loss-page', { url: 'https://example.com/high-loss-page', clicks: 350, impressions: 7000, ctr: 0.05, position: 5.0 }],
+    ['https://example.com/high-percent-lower-loss', { url: 'https://example.com/high-percent-lower-loss', clicks: 10, impressions: 200, ctr: 0.05, position: 9.0 }],
+  ]);
+  const rankingAnalyzed = analyzeTrafficDecay(rankingRecent, rankingBaseline);
+  console.assert(rankingAnalyzed[0].url === 'https://example.com/high-loss-page', 'Highest absolute clicks lost (150 lost) must rank #1');
+  console.assert(rankingAnalyzed[1].url === 'https://example.com/high-percent-lower-loss', 'Lower absolute loss (40 lost) must rank #2');
+  console.log('✓ Test 6: Absolute clicks lost primary ranking passed');
+
+  // Test 7: Year-over-Year (YoY) Seasonality Detection
+  const yoyBaseline = new Map([
+    ['https://example.com/seasonal-diwali-sale', { url: 'https://example.com/seasonal-diwali-sale', clicks: 200, impressions: 4000, ctr: 0.05, position: 3.0 }],
+  ]);
+  const yoyRecent = new Map([
+    ['https://example.com/seasonal-diwali-sale', { url: 'https://example.com/seasonal-diwali-sale', clicks: 80, impressions: 1600, ctr: 0.05, position: 5.0 }],
+  ]);
+  const yoyYearAgo = new Map([
+    ['https://example.com/seasonal-diwali-sale', { url: 'https://example.com/seasonal-diwali-sale', clicks: 82, impressions: 1650, ctr: 0.05, position: 4.8 }],
+  ]);
+  const yoyAnalyzed = analyzeTrafficDecay(yoyRecent, yoyBaseline, yoyYearAgo);
+  console.assert(yoyAnalyzed[0].isFlagged === true, 'Seasonal drop should still be flagged');
+  console.assert(yoyAnalyzed[0].isSeasonal === true, 'YoY comparison must mark post as isSeasonal = true');
+  console.log('✓ Test 7: Year-over-Year seasonality detection passed');
+
+  // Test 8: Severity-Weighted Content Health Score (Sanity Check)
+  const healthyPages = analyzeTrafficDecay(
+    new Map([['https://example.com/p1', { url: 'https://example.com/p1', clicks: 100, impressions: 1000, ctr: 0.1, position: 2.0 }]]),
+    new Map([['https://example.com/p1', { url: 'https://example.com/p1', clicks: 100, impressions: 1000, ctr: 0.1, position: 2.0 }]])
+  );
+  const perfectHealth = calculateSeverityWeightedHealthScore(healthyPages);
+  console.assert(perfectHealth.score === 100 && perfectHealth.grade === 'A+', 'Clean site must get 100% A+');
+
+  const decayingHealth = calculateSeverityWeightedHealthScore(rankingAnalyzed);
+  console.assert(decayingHealth.grade !== 'A+', 'Site with flagged decaying posts must NOT receive Grade A+');
+  console.assert(decayingHealth.score <= 86, `Expected score <= 86 for decaying posts, got ${decayingHealth.score}`);
+  console.log('✓ Test 8: Severity-weighted content health score passed');
+
+  // Test 9: Server-side Entitlement Gating & Single Source of Truth
   const mockPages = Array.from({ length: 8 }, (_, i) => ({
     id: `page-${i + 1}`,
     url: `https://example.com/post-${i + 1}`,
     aiSuggestion: `Specific suggestion for post ${i + 1}`,
   }));
 
-  // Free Tier
+  // Free Tier (5 visible, 3 locked)
   const freeGated = gateAnalyzedPages(mockPages, false, FREE_TIER_PAGE_LIMIT);
   console.assert(freeGated.isUnlocked === false, 'Free tier should be isUnlocked = false');
-  console.assert(freeGated.lockedCount === 3, `Expected 3 locked items, got ${freeGated.lockedCount}`);
+  console.assert(freeGated.totalCount === 8, `Expected totalCount 8, got ${freeGated.totalCount}`);
+  console.assert(freeGated.lockedCount === 3, `Expected lockedCount 3, got ${freeGated.lockedCount}`);
   console.assert(freeGated.pages[0].aiSuggestion !== null, 'Item 0 AI suggestion should be visible');
   console.assert(freeGated.pages[4].aiSuggestion !== null, 'Item 4 AI suggestion should be visible');
   console.assert(freeGated.pages[5].aiSuggestion === null, 'Item 5 AI suggestion must be redacted on server');
   console.assert(freeGated.pages[7].aiSuggestion === null, 'Item 7 AI suggestion must be redacted on server');
 
-  // Paid Tier
+  // Paid Tier (All 8 visible, 0 locked)
   const paidGated = gateAnalyzedPages(mockPages, true, FREE_TIER_PAGE_LIMIT);
   console.assert(paidGated.isUnlocked === true, 'Paid tier should be isUnlocked = true');
   console.assert(paidGated.lockedCount === 0, 'Paid tier should have 0 locked items');
   console.assert(paidGated.pages[5].aiSuggestion !== null, 'Paid tier item 5 suggestion must be visible');
-  console.log('✓ Test 3: Server-side free cap and paid gating passed');
+  console.log('✓ Test 9: Server-side free cap and single source of truth gating passed');
 
-  // Test 4: Razorpay Webhook HMAC-SHA256 signature verification
+  // Test 10: Razorpay Webhook HMAC-SHA256 signature verification
   const secret = 'webhook_secret_xyz123';
   const rawBody = JSON.stringify({ event: 'payment.captured', payload: { payment: { entity: { id: 'pay_123' } } } });
   const validSignature = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
@@ -64,9 +167,11 @@ function runTests() {
 
   console.assert(verifyRazorpayWebhookSignature(rawBody, validSignature, secret) === true, 'Valid signature must pass');
   console.assert(verifyRazorpayWebhookSignature(rawBody, invalidSignature, secret) === false, 'Tampered signature must fail');
-  console.log('✓ Test 4: Razorpay Webhook signature verification passed');
+  console.log('✓ Test 10: Razorpay Webhook signature verification passed');
 
-  console.log('\nAll 4 automated verification tests passed successfully! 🎉');
+  console.log('\n======================================================');
+  console.log('  All 10 core automated verification test suites passed! 🎉');
+  console.log('======================================================\n');
 }
 
 runTests();

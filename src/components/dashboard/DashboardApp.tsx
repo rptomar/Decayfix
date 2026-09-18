@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   AlertTriangle, 
   ArrowDownRight, 
@@ -17,6 +17,9 @@ import {
   Bell,
   Mail,
   BarChart3,
+  Download,
+  Award,
+  Calendar,
   X
 } from 'lucide-react';
 import Sparkline from '@/components/common/Sparkline';
@@ -27,6 +30,18 @@ declare global {
   }
 }
 
+interface QueryItem {
+  query: string;
+  baselineClicks: number;
+  recentClicks: number;
+  clicksLost: number;
+  baselinePosition: number;
+  recentPosition: number;
+  positionDelta: number;
+  baselineImpressions: number;
+  recentImpressions: number;
+}
+
 interface PageItem {
   id?: string;
   url: string;
@@ -35,11 +50,16 @@ interface PageItem {
   baselineImpressions: number;
   recentClicks: number;
   recentImpressions: number;
+  clicksLost: number;
   dropPercentClicks: number;
   dropPercentImpressions: number;
   severityScore: number;
   aiSuggestion: string | null;
+  topQueries?: QueryItem[];
   isFlagged: boolean;
+  isSeasonal?: boolean;
+  isRecovered?: boolean;
+  previousRecentClicks?: number | null;
   isLocked?: boolean;
 }
 
@@ -62,6 +82,15 @@ interface Props {
   razorpayKeyId: string;
 }
 
+// Diverse realistic blurred placeholders for locked cards (prevents boilerplate look)
+const LOCKED_TEASERS = [
+  'Audit newly covered competitor H2 subtopics, update 2026 pricing tables, and fix keyword cannibalization.',
+  'Target rising People Also Ask questions, add location schema markup, and rewrite low-CTR meta title.',
+  'Refresh obsolete statistics, replace dead outbound citations, and inject internal links from high-authority hubs.',
+  'Resolve search intent drift on primary query, expand thin content sections, and update H1 power modifier.',
+  'Optimize header hierarchy for commercial intent, add interactive comparison table, and improve mobile LCP.',
+];
+
 export default function DashboardApp({
   user,
   initialSites,
@@ -79,6 +108,12 @@ export default function DashboardApp({
   const [isUnlocked, setIsUnlocked] = useState(initialIsUnlocked);
   const [lockedCount, setLockedCount] = useState(0);
   const [totalFlagged, setTotalFlagged] = useState(0);
+  const [totalClicksLost, setTotalClicksLost] = useState(0);
+  const [recoveredCount, setRecoveredCount] = useState(0);
+  const [healthScore, setHealthScore] = useState(100);
+  const [healthGrade, setHealthGrade] = useState('A+');
+  const [healthLabel, setHealthLabel] = useState('Healthy Content Base');
+  const [healthColor, setHealthColor] = useState('text-emerald-400');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [hasRunAnalysis, setHasRunAnalysis] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -96,36 +131,30 @@ export default function DashboardApp({
   const [digestEnabled, setDigestEnabled] = useState(true);
   const [digestSaved, setDigestSaved] = useState(false);
 
+  const isCookingRef = useRef(false);
+
   const handleCopyPrompt = (page: PageItem) => {
+    const topQ = page.topQueries?.[0];
+    const queryContext = topQ
+      ? `\nKey Dropping Search Query: "${topQ.query}" (Rank dropped from ${topQ.baselinePosition} to ${topQ.recentPosition}, lost ${topQ.clicksLost} clicks).`
+      : '';
+
     const prompt = `You are a world-class SEO strategist & content editor.
-I have a decaying blog post on my website that has lost ${page.dropPercentClicks}% of its Google search clicks (dropped from ${page.baselineClicks} to ${page.recentClicks} clicks over recent weeks).
+I have a decaying blog post on my website that has lost ${page.dropPercentClicks}% of its Google search clicks (dropped from ${page.baselineClicks} to ${page.recentClicks} clicks over recent weeks, lost ${page.clicksLost || Math.max(0, page.baselineClicks - page.recentClicks)} clicks).
 
 URL: ${page.url}
-Title: ${page.title}
-Key Diagnosis: ${page.aiSuggestion || 'Search intent shift and outdated information'}
+Title: ${page.title}${queryContext}
+Key Diagnosis: ${page.aiSuggestion || 'Search intent shift and outdated comparison data'}
 
 Please provide:
-1. An improved, high-CTR Meta Title & Meta Description with current power modifiers.
-2. 3 new H2/H3 subheadings and search intent sections that current top 3 competitors cover.
+1. An improved, high-CTR Meta Title (< 60 chars) & Meta Description (< 155 chars) with current power modifiers.
+2. 3 new H2/H3 subheadings and search intent sections addressing competitor coverage.
 3. 5 "People Also Ask" FAQ questions with concise, snippet-ready answers.
 4. Recommended internal linking anchor text and strategic updates to recover lost rankings.`;
 
     navigator.clipboard.writeText(prompt);
     setCopiedPromptUrl(page.url);
     setTimeout(() => setCopiedPromptUrl(null), 2200);
-  };
-
-  const calculateHealthScore = () => {
-    if (analysisResults.length === 0) return 100;
-    const decayedRatio = totalFlagged / Math.max(analysisResults.length, 1);
-    return Math.max(45, Math.round((1 - decayedRatio) * 100));
-  };
-
-  const getHealthGrade = (score: number) => {
-    if (score >= 95) return { grade: 'A+', color: 'text-emerald-400', label: 'Exceptional Freshness' };
-    if (score >= 88) return { grade: 'A', color: 'text-emerald-400', label: 'Healthy Content Base' };
-    if (score >= 75) return { grade: 'B', color: 'text-amber-400', label: 'Moderate Content Decay' };
-    return { grade: 'C-', color: 'text-rose-400', label: 'Severe Traffic Decay' };
   };
 
   const SEO_FACTS = [
@@ -149,7 +178,7 @@ Please provide:
 
       stepInterval = setInterval(() => {
         setAnalysisStep((prev) => (prev < 4 ? prev + 1 : prev));
-      }, 700);
+      }, 500);
     }
 
     return () => {
@@ -158,7 +187,7 @@ Please provide:
     };
   }, [analyzing]);
 
-  // Auto-restore previously analyzed data from sessionStorage on mount (prevents data loss when navigating)
+  // Auto-restore previously analyzed data from sessionStorage on mount
   useEffect(() => {
     try {
       const cacheKey = `decayfix_state_${user.id || 'current'}`;
@@ -169,6 +198,12 @@ Please provide:
           console.log('[DecayFix] Restoring cached audit results from session:', parsed.siteUrl);
           setAnalysisResults(parsed.results);
           setTotalFlagged(parsed.totalFlagged || 0);
+          setTotalClicksLost(parsed.totalClicksLost || 0);
+          setRecoveredCount(parsed.recoveredCount || 0);
+          setHealthScore(parsed.healthScore ?? 100);
+          setHealthGrade(parsed.healthGrade ?? 'A');
+          setHealthLabel(parsed.healthLabel ?? 'Healthy Content Base');
+          setHealthColor(parsed.healthColor ?? 'text-emerald-400');
           setLockedCount(parsed.lockedCount || 0);
           setIsUnlocked(parsed.isUnlocked ?? initialIsUnlocked);
           if (parsed.siteUrl) {
@@ -182,8 +217,6 @@ Please provide:
       console.warn('[DecayFix] Could not restore analysis from sessionStorage:', e);
     }
   }, [user.id]);
-
-  const isCookingRef = React.useRef(false);
 
   // Progressive One-by-One AI Action Plan Generator
   useEffect(() => {
@@ -215,8 +248,10 @@ Please provide:
             title: ungeneratedPage.title,
             baselineClicks: ungeneratedPage.baselineClicks,
             recentClicks: ungeneratedPage.recentClicks,
+            clicksLost: ungeneratedPage.clicksLost,
             dropPercentClicks: ungeneratedPage.dropPercentClicks,
             dropPercentImpressions: ungeneratedPage.dropPercentImpressions,
+            topQueries: ungeneratedPage.topQueries || [],
             siteUrl: selectedSiteUrl || customSiteInput,
           }),
         });
@@ -228,11 +263,12 @@ Please provide:
         }
 
         if (!suggestionText) {
-          // Instant heuristic fallback if API returns empty
+          const topQ = ungeneratedPage.topQueries?.[0];
+          const queryMention = topQ ? `for "${topQ.query}" (rank dropped from ${topQ.baselinePosition} to ${topQ.recentPosition})` : `for "${ungeneratedPage.title || 'this topic'}"`;
           suggestionText =
             ungeneratedPage.dropPercentClicks >= 50
-              ? `Major search intent shift detected. Audit the current top 3 Google SERP competitors for "${ungeneratedPage.title || 'this topic'}" to identify newly added sections, update all dates/screenshots to the current year, and rewrite the introductory hook with high-CTR action words.`
-              : `Search impressions have softened. Refresh outdated statistics, expand thin sections with recent examples, add a targeted FAQ section answering "People Also Ask" queries, and test an updated title tag with current year modifiers.`;
+              ? `Major search intent shift detected ${queryMention}. Audit current top 3 Google SERP competitors to identify newly added subheadings, update all dates/statistics to the current year, and rewrite the introductory hook with high-CTR action modifiers.`
+              : `Search impressions have softened ${queryMention}. Refresh outdated statistics, expand thin sections with recent examples, add a targeted FAQ section answering "People Also Ask" queries, and test an updated title tag with current year modifiers.`;
         }
 
         setAnalysisResults((prev) => {
@@ -251,6 +287,12 @@ Please provide:
                 siteUrl: selectedSiteUrl || customSiteInput,
                 results: updated,
                 totalFlagged,
+                totalClicksLost,
+                recoveredCount,
+                healthScore,
+                healthGrade,
+                healthLabel,
+                healthColor,
                 lockedCount,
                 isUnlocked,
                 timestamp: Date.now(),
@@ -264,10 +306,12 @@ Please provide:
         });
       } catch (err) {
         console.warn('[DecayFix] AI suggestion error for', ungeneratedPage.url, err);
+        const topQ = ungeneratedPage.topQueries?.[0];
+        const queryMention = topQ ? `for "${topQ.query}"` : `for "${ungeneratedPage.title || 'this topic'}"`;
         const fallbackText =
           ungeneratedPage.dropPercentClicks >= 50
-            ? `Major search intent shift detected. Audit the current top 3 Google SERP competitors for "${ungeneratedPage.title || 'this topic'}" to identify newly added sections, update all dates/screenshots to the current year, and rewrite the introductory hook with high-CTR action words.`
-            : `Search impressions have softened. Refresh outdated statistics, expand thin sections with recent examples, add a targeted FAQ section answering "People Also Ask" queries, and test an updated title tag with current year modifiers.`;
+            ? `Major search intent shift detected ${queryMention}. Audit the current top 3 Google SERP competitors to identify newly added sections, update all dates/screenshots to the current year, and rewrite the introductory hook with high-CTR action words.`
+            : `Search impressions have softened ${queryMention}. Refresh outdated statistics, expand thin sections with recent examples, add a targeted FAQ section answering "People Also Ask" queries, and test an updated title tag with current year modifiers.`;
 
         setAnalysisResults((prev) => {
           const updated = prev.map((item) =>
@@ -284,7 +328,7 @@ Please provide:
     };
 
     fetchSingleSuggestion();
-  }, [analysisResults, hasRunAnalysis, analyzing, selectedSiteUrl, customSiteInput, user.id, totalFlagged, lockedCount, isUnlocked]);
+  }, [analysisResults, hasRunAnalysis, analyzing, selectedSiteUrl, customSiteInput, user.id, totalFlagged, totalClicksLost, recoveredCount, healthScore, healthGrade, healthLabel, healthColor, lockedCount, isUnlocked]);
 
   // Load Razorpay Checkout script dynamically & fetch live GSC properties
   useEffect(() => {
@@ -296,7 +340,6 @@ Please provide:
       document.body.appendChild(script);
     }
 
-    // Auto-fetch verified Search Console sites
     const fetchGscProperties = async () => {
       try {
         const res = await fetch('/api/sites');
@@ -347,22 +390,36 @@ Please provide:
       console.log('[DecayFix] Analysis results received:', data);
       const results = data.results || [];
       const flaggedCount = data.totalFlaggedCount || 0;
+      const clicksLostCount = data.totalClicksLost || 0;
+      const recovered = data.recoveredCount || 0;
       const locked = data.lockedCount || 0;
       const unlocked = data.isUnlocked || false;
 
       setAnalysisResults(results);
       setTotalFlagged(flaggedCount);
+      setTotalClicksLost(clicksLostCount);
+      setRecoveredCount(recovered);
+      setHealthScore(data.healthScore ?? 100);
+      setHealthGrade(data.healthGrade ?? 'A');
+      setHealthLabel(data.healthLabel ?? 'Healthy Content Base');
+      setHealthColor(data.healthColor ?? 'text-emerald-400');
       setLockedCount(locked);
       setIsUnlocked(unlocked);
       setHasRunAnalysis(true);
 
-      // Persist to sessionStorage so navigation between pages never loses state
+      // Persist single source of truth state to sessionStorage
       try {
         const cacheKey = `decayfix_state_${user.id || 'current'}`;
         sessionStorage.setItem(cacheKey, JSON.stringify({
           siteUrl: url,
           results,
           totalFlagged: flaggedCount,
+          totalClicksLost: clicksLostCount,
+          recoveredCount: recovered,
+          healthScore: data.healthScore ?? 100,
+          healthGrade: data.healthGrade ?? 'A',
+          healthLabel: data.healthLabel ?? 'Healthy Content Base',
+          healthColor: data.healthColor ?? 'text-emerald-400',
           lockedCount: locked,
           isUnlocked: unlocked,
           timestamp: Date.now(),
@@ -456,6 +513,9 @@ Please provide:
     }
   };
 
+  // Monthly estimated clicks lost calculation (56-day window normalized to 30 days)
+  const monthlyClicksLost = Math.round(totalClicksLost * (30 / 56));
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-8">
       {/* Top Header & User Identity */}
@@ -483,6 +543,30 @@ Please provide:
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* CSV Export Button */}
+          {hasRunAnalysis && (
+            isUnlocked ? (
+              <a
+                href={`/api/export?siteUrl=${encodeURIComponent(selectedSiteUrl || customSiteInput)}`}
+                download
+                className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors inline-flex items-center gap-1.5"
+              >
+                <Download className="w-3.5 h-3.5 text-sky-400" />
+                <span>Export CSV</span>
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={handleCheckout}
+                className="px-3.5 py-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-400 text-xs font-medium border border-slate-700/60 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                title="Unlock full report to export CSV"
+              >
+                <Lock className="w-3 h-3 text-slate-500" />
+                <span>Export CSV</span>
+              </button>
+            )
+          )}
+
           <button
             type="button"
             onClick={() => setShowShareModal(true)}
@@ -522,7 +606,7 @@ Please provide:
           <div className="flex items-center gap-3">
             <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
             <span className="text-sm font-medium">
-              Payment confirmed! All decaying posts and Claude AI suggestions are permanently unlocked.
+              Payment confirmed! All decaying posts, query keywords, and AI playbooks are permanently unlocked.
             </span>
           </div>
           <button
@@ -601,7 +685,7 @@ Please provide:
       {/* Results Section */}
       {hasRunAnalysis && (
         <div className="space-y-6">
-          {/* Quick Metrics Bar (4-Card High-Impact Layout) */}
+          {/* Quick Metrics Bar (Single Source of Truth) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-5 rounded-xl border border-slate-800 bg-slate-900/60">
               <div className="text-xs text-slate-400 font-medium">Pages Analyzed</div>
@@ -617,7 +701,18 @@ Please provide:
               <div className="text-[11px] text-rose-300/70 mt-0.5">Urgent content refresh required</div>
             </div>
 
-            {/* SEO Content Health Score Card */}
+            {/* Lead with Monthly Traffic Lost */}
+            <div className="p-5 rounded-xl border border-amber-500/30 bg-amber-950/20">
+              <div className="text-xs text-amber-300 font-medium flex items-center gap-1.5">
+                <ArrowDownRight className="w-3.5 h-3.5" /> Monthly Traffic Lost
+              </div>
+              <div className="text-2xl font-black text-amber-400 mt-1">
+                ~{monthlyClicksLost.toLocaleString()} <span className="text-sm font-normal text-slate-400">clicks/mo</span>
+              </div>
+              <div className="text-[11px] text-amber-300/70 mt-0.5">Across {totalFlagged} decaying URLs</div>
+            </div>
+
+            {/* Severity-Weighted Content Health Score Card */}
             <div 
               onClick={() => setShowShareModal(true)}
               className="p-5 rounded-xl border border-indigo-500/40 bg-gradient-to-br from-indigo-950/40 to-slate-900 cursor-pointer hover:border-indigo-400 transition-all group"
@@ -629,30 +724,36 @@ Please provide:
                 <span className="text-[10px] text-indigo-400 font-bold group-hover:underline">Share Card ➔</span>
               </div>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-black text-white">{calculateHealthScore()}%</span>
-                <span className={`text-xs font-bold ${getHealthGrade(calculateHealthScore()).color}`}>
-                  Grade {getHealthGrade(calculateHealthScore()).grade}
+                <span className="text-2xl font-black text-white">{healthScore}%</span>
+                <span className={`text-xs font-bold ${healthColor}`}>
+                  Grade {healthGrade}
                 </span>
               </div>
-              <div className="text-[11px] text-slate-400 mt-0.5">{getHealthGrade(calculateHealthScore()).label}</div>
-            </div>
-
-            <div className="p-5 rounded-xl border border-slate-800 bg-slate-900/60">
-              <div className="text-xs text-slate-400 font-medium">Report Status</div>
-              <div className="text-2xl font-black text-white mt-1">
-                {isUnlocked ? (
-                  <span className="text-emerald-400 text-lg font-bold">Full Unlock Active</span>
-                ) : (
-                  <span className="text-amber-400 text-lg font-bold">5 of {totalFlagged} Visible</span>
-                )}
-              </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
-                {isUnlocked ? 'Unlimited AI playbooks' : 'Preview tier active'}
-              </div>
+              <div className="text-[11px] text-slate-400 mt-0.5">{healthLabel}</div>
             </div>
           </div>
 
-          {/* Upsell Banner for Free Users */}
+          {/* Phase 4: Celebratory Recovered Content Banner */}
+          {recoveredCount > 0 && (
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-emerald-950/80 border border-emerald-500/40 flex items-center justify-between shadow-xl">
+              <div className="flex items-center gap-3">
+                <span className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-lg">🎉</span>
+                <div>
+                  <div className="text-sm font-bold text-emerald-300">
+                    {recoveredCount} Previously Decaying {recoveredCount === 1 ? 'Post' : 'Posts'} Successfully Recovered!
+                  </div>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    Your recent content updates worked! These URLs have returned to or exceeded baseline traffic.
+                  </p>
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold">
+                Recovery Verified
+              </span>
+            </div>
+          )}
+
+          {/* Upsell Banner for Free Users (Derived strictly from single source of truth) */}
           {!isUnlocked && lockedCount > 0 && (
             <div className="rounded-2xl border-2 border-indigo-500/80 bg-gradient-to-r from-indigo-950/80 via-slate-900 to-indigo-950/80 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
               <div className="space-y-2 text-center sm:text-left">
@@ -660,25 +761,32 @@ Please provide:
                   <Lock className="w-3 h-3" /> One-Time Unlock
                 </div>
                 <h3 className="text-xl font-bold text-white">
-                  Unlock all {lockedCount} remaining decaying posts & AI action plans
+                  Unlock all {lockedCount} remaining decaying {lockedCount === 1 ? 'post' : 'posts'} & AI action plans
                 </h3>
                 <p className="text-sm text-slate-300 max-w-xl">
-                  Get full traffic drop breakdowns and Claude AI content refresh recommendations for every post on your site.
+                  Recover ~{monthlyClicksLost.toLocaleString()} lost clicks/mo. Get query rank drop tables, keyword diagnostics, and AI content refresh playbooks for every post on your site.
                 </p>
+                <div className="text-xs text-slate-400 flex items-center justify-center sm:justify-start gap-1.5 pt-1">
+                  <span>🛡️</span>
+                  <span><strong>7-Day Money-Back Guarantee:</strong> 100% full refund if this audit doesn't uncover actionable wins.</span>
+                </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleCheckout}
-                disabled={paymentLoading}
-                className="shrink-0 px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105 cursor-pointer"
-              >
-                {paymentLoading ? 'Processing...' : 'Unlock Full Report • ₹999'}
-              </button>
+              <div className="flex flex-col items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleCheckout}
+                  disabled={paymentLoading}
+                  className="px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105 cursor-pointer"
+                >
+                  {paymentLoading ? 'Processing...' : 'Unlock Full Report • ₹999'}
+                </button>
+                <span className="text-[11px] text-slate-400">One-time payment • Lifetime report access</span>
+              </div>
             </div>
           )}
 
-          {/* Eligible Flagged Pages Progressive AI Calculations */}
+          {/* Progressive AI Generation Status Banner */}
           {(() => {
             const eligibleFlaggedPages = analysisResults.filter((p) => p.isFlagged && !p.isLocked);
             const completedAiPages = eligibleFlaggedPages.filter((p) => p.aiSuggestion && p.aiSuggestion.trim() !== '');
@@ -687,7 +795,6 @@ Please provide:
 
             return (
               <>
-                {/* Live Progressive AI Generation Status Banner */}
                 {eligibleFlaggedPages.length > 0 && (
                   <div className={`p-4 rounded-xl border transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg ${
                     isGeneratingAi
@@ -741,14 +848,14 @@ Please provide:
                   </div>
                 )}
 
-                {/* Table / List of Flagged Pages */}
+                {/* Table / List of Flagged Pages (Ranked by Absolute Loss) */}
                 <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-xl">
                   <div className="px-6 py-4 border-b border-slate-800 bg-slate-950/50 flex items-center justify-between">
                     <span className="text-sm font-bold text-white uppercase tracking-wider">
-                      Flagged Decaying Posts (Ranked by Severity)
+                      Flagged Decaying Posts (Ranked by Absolute Lost Clicks)
                     </span>
                     <span className="text-xs text-slate-400">
-                      Sorted by highest lost clicks & % drop
+                      Sorted by highest traffic lost & % drop
                     </span>
                   </div>
 
@@ -762,6 +869,7 @@ Please provide:
                     ) : (
                       analysisResults.map((page, index) => {
                         const isLockedItem = page.isLocked;
+                        const topQuery = page.topQueries?.[0];
 
                         return (
                           <div
@@ -779,9 +887,24 @@ Please provide:
                                   <span className="px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-bold">
                                     -{page.dropPercentClicks}% Clicks
                                   </span>
+                                  {page.clicksLost > 0 && (
+                                    <span className="px-2 py-0.5 rounded bg-rose-950 border border-rose-800 text-rose-400 text-xs font-bold">
+                                      -{page.clicksLost} Lost Clicks
+                                    </span>
+                                  )}
                                   {page.dropPercentImpressions > 0 && (
                                     <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-xs font-medium">
                                       -{page.dropPercentImpressions}% Impressions
+                                    </span>
+                                  )}
+                                  {page.isSeasonal && (
+                                    <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 text-xs font-medium flex items-center gap-1">
+                                      <Calendar className="w-3 h-3" /> Seasonal Dip
+                                    </span>
+                                  )}
+                                  {page.isRecovered && (
+                                    <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-bold flex items-center gap-1">
+                                      <Award className="w-3 h-3" /> Recovered
                                     </span>
                                   )}
                                   <span className="text-xs text-slate-400 font-mono break-all">
@@ -793,13 +916,23 @@ Please provide:
                                   {page.title}
                                 </h3>
 
-                                {/* Claude AI Suggestion Box with One-Click Prompt Copy */}
+                                {/* Top Query rank shift preview tag */}
+                                {topQuery && !isLockedItem && (
+                                  <div className="text-xs text-slate-400 flex items-center gap-2 bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
+                                    <span className="text-sky-400 font-semibold">Top Dropping Query:</span>
+                                    <span className="text-slate-200 font-mono">"{topQuery.query}"</span>
+                                    <span className="text-slate-500">•</span>
+                                    <span>Rank: <span className="text-slate-300 font-bold">{topQuery.baselinePosition}</span> → <span className="text-rose-400 font-bold">{topQuery.recentPosition}</span></span>
+                                  </div>
+                                )}
+
+                                {/* AI Suggestion Box with One-Click Prompt Copy */}
                                 {isLockedItem ? (
                                   <div className="p-4 rounded-xl border border-dashed border-slate-800 bg-slate-900/40 flex items-center justify-between gap-4">
                                     <div className="flex items-center gap-3">
                                       <Lock className="w-4 h-4 text-slate-500 shrink-0" />
                                       <span className="text-xs text-slate-400 font-medium filter blur-[3px]">
-                                        Update key search intent, refresh the outdated 2024 comparisons, and rewrite the meta description with high-CTR power keywords.
+                                        {LOCKED_TEASERS[index % LOCKED_TEASERS.length]}
                                       </span>
                                     </div>
                                     <button
@@ -846,7 +979,7 @@ Please provide:
                                         <span>Cooking AI Action Plan...</span>
                                       </div>
                                       <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono font-medium border border-indigo-500/30">
-                                        Analyzing SERP Intent
+                                        Analyzing Search Queries & SERP Intent
                                       </span>
                                     </div>
                                     <div className="space-y-1.5 pt-1">
@@ -876,21 +1009,23 @@ Please provide:
                                     dropPercent={page.dropPercentClicks}
                                   />
                                   <div>
-                                    <div className="text-xs text-slate-500">8-Wk Dip</div>
-                                    <div className="text-sm font-bold">
+                                    <div className="text-xs text-slate-500">8-Wk Search Clicks</div>
+                                    <div className="text-sm font-bold flex items-center justify-end gap-1.5">
                                       <span className="text-slate-400">{page.baselineClicks}</span>
-                                      <span className="text-slate-600 mx-1.5">→</span>
-                                      <span className="text-rose-400">{page.recentClicks}</span>
+                                      <span className="text-slate-600">→</span>
+                                      <span className={page.recentClicks < page.baselineClicks ? 'text-rose-400' : 'text-emerald-400'}>
+                                        {page.recentClicks}
+                                      </span>
                                     </div>
                                   </div>
                                 </div>
 
-                                {!isLockedItem ? (
+                                {!isLockedItem || index === 0 ? (
                                   <a
                                     href={`/dashboard/page/${encodeURIComponent(page.url)}`}
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 transition-colors"
                                   >
-                                    <span>View Detail</span>
+                                    <span>{index === 0 && isLockedItem ? 'Free Demo View' : 'View Detail'}</span>
                                     <ChevronRight className="w-3.5 h-3.5" />
                                   </a>
                                 ) : (
@@ -917,7 +1052,7 @@ Please provide:
         </div>
       )}
 
-      {/* SEO Content Health Score Modal (Spotify Wrapped for SEO) */}
+      {/* SEO Content Health Score Modal */}
       {showShareModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
           <div className="relative w-full max-w-lg rounded-3xl border border-indigo-500/40 bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 p-6 sm:p-8 shadow-2xl space-y-6">
@@ -945,10 +1080,10 @@ Please provide:
 
               <div className="text-center py-4 space-y-2">
                 <div className="text-5xl sm:text-6xl font-black text-white tracking-tight">
-                  {calculateHealthScore()}%
+                  {healthScore}%
                 </div>
-                <div className={`text-sm font-bold tracking-wider uppercase ${getHealthGrade(calculateHealthScore()).color}`}>
-                  Grade {getHealthGrade(calculateHealthScore()).grade} • {getHealthGrade(calculateHealthScore()).label}
+                <div className={`text-sm font-bold tracking-wider uppercase ${healthColor}`}>
+                  Grade {healthGrade} • {healthLabel}
                 </div>
               </div>
 
@@ -958,8 +1093,8 @@ Please provide:
                   <div className="text-lg font-bold text-rose-400">{totalFlagged} Pages</div>
                 </div>
                 <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-                  <div className="text-[11px] text-slate-400">Healthy Baseline</div>
-                  <div className="text-lg font-bold text-emerald-400">{analysisResults.length - totalFlagged} Pages</div>
+                  <div className="text-[11px] text-slate-400">Monthly Traffic Lost</div>
+                  <div className="text-lg font-bold text-amber-400">~{monthlyClicksLost} Clicks</div>
                 </div>
               </div>
             </div>
@@ -969,7 +1104,7 @@ Please provide:
               <div className="grid grid-cols-2 gap-3">
                 <a
                   href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                    `Just audited my site (${selectedSiteUrl.replace('sc-domain:', '')}) with @DecayFix!\n\n🚀 Content Freshness: ${calculateHealthScore()}%\n⚠️ Decaying Posts: ${totalFlagged}\n\nCheck your Google Search Console decay for free at https://decayfix.com`
+                    `Just audited my site (${selectedSiteUrl.replace('sc-domain:', '')}) with @DecayFix!\n\n🚀 Content Freshness: ${healthScore}%\n⚠️ Decaying Posts: ${totalFlagged}\n📉 Monthly Traffic Loss: ~${monthlyClicksLost} clicks\n\nCheck your Search Console decay for free at https://decayfix.com`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -991,7 +1126,7 @@ Please provide:
               <button
                 type="button"
                 onClick={() => {
-                  const text = `DecayFix SEO Audit for ${selectedSiteUrl.replace('sc-domain:', '')}\nContent Freshness Score: ${calculateHealthScore()}%\nTotal Analyzed: ${analysisResults.length} pages\nDecaying URLs: ${totalFlagged} pages\nAudited via https://decayfix.com`;
+                  const text = `DecayFix SEO Audit for ${selectedSiteUrl.replace('sc-domain:', '')}\nContent Health Score: ${healthScore}% (Grade ${healthGrade})\nDecaying URLs: ${totalFlagged} pages\nMonthly Lost Clicks: ~${monthlyClicksLost} clicks\nAudited via https://decayfix.com`;
                   navigator.clipboard.writeText(text);
                   setCopiedCardText(true);
                   setTimeout(() => setCopiedCardText(false), 2000);
@@ -1106,7 +1241,7 @@ Please provide:
 
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 text-xs text-indigo-300 font-medium border border-slate-700">
               <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Fast Parallel AI Engine</span>
+              <span>Query Intelligence Engine</span>
             </div>
           </div>
 
@@ -1114,9 +1249,9 @@ Please provide:
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {[
               { num: 1, title: 'Auth & Handshake', desc: 'Google Search Console verified' },
-              { num: 2, title: 'Fetch 16-Mo Metrics', desc: 'Baseline vs 8-week data' },
-              { num: 3, title: 'Decay Detection', desc: 'Filtering ≥20% traffic drops' },
-              { num: 4, title: 'AI Action Plans', desc: 'Generating recovery playbooks' },
+              { num: 2, title: 'Fetch 16-Mo Metrics', desc: 'Page & query search analytics' },
+              { num: 3, title: 'Decay Detection', desc: 'Volume floors & absolute lost clicks' },
+              { num: 4, title: 'AI Action Engine', desc: 'Query-level recovery playbooks' },
             ].map((st) => {
               const isDone = analysisStep > st.num;
               const isCurrent = analysisStep === st.num;
@@ -1175,7 +1310,7 @@ Please provide:
           </div>
           <h2 className="text-lg font-bold text-white mb-2">Ready to run your content decay audit</h2>
           <p className="text-sm text-slate-400 max-w-md mx-auto mb-6">
-            Click "Analyze My Site" above to compare your recent 8-week performance with your 16-month baseline across all 140+ URLs.
+            Click "Analyze My Site" above to compare your recent 8-week performance with your 16-month baseline across all URLs.
           </p>
           <button
             type="button"

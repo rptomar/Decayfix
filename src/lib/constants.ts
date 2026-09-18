@@ -5,8 +5,16 @@
 // Minimum traffic drop percentage to classify a page as decaying (e.g. 20%)
 export const DECAY_THRESHOLD_PERCENT = 20;
 
+// Minimum volume floors required for a page to qualify for decay detection
+// (prevents statistical noise or 0 -> 0 dead pages from flagging)
+export const MIN_BASELINE_CLICKS = 30;
+export const MIN_BASELINE_IMPRESSIONS = 300;
+
 // Free tier limit: maximum number of flagged pages visible with full AI suggestions
 export const FREE_TIER_PAGE_LIMIT = 5;
+
+// Free tier: number of full detail pages unlocked as a live demo (top #1 page)
+export const FREE_PREVIEW_DETAIL_LIMIT = 1;
 
 // Default one-time unlock price in INR (e.g., INR 999 = ~$12 USD)
 export const DEFAULT_PRICE_INR = 999;
@@ -24,3 +32,4 @@ export const GOOGLE_OAUTH_SCOPES = [
   'profile',
   'https://www.googleapis.com/auth/webmasters.readonly',
 ].join(' ');
+

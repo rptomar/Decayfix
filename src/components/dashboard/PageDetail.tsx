@@ -24,6 +24,18 @@ declare global {
   }
 }
 
+interface QueryItem {
+  query: string;
+  baselineClicks: number;
+  recentClicks: number;
+  clicksLost: number;
+  baselinePosition: number;
+  recentPosition: number;
+  positionDelta: number;
+  baselineImpressions: number;
+  recentImpressions: number;
+}
+
 interface PageData {
   url: string;
   title: string;
@@ -31,12 +43,15 @@ interface PageData {
   baselineImpressions: number;
   recentClicks: number;
   recentImpressions: number;
+  clicksLost?: number;
   dropPercentClicks: number;
   dropPercentImpressions: number;
   severityScore: number;
   aiSuggestion: string | null;
+  topQueries?: QueryItem[];
   isFlagged: boolean;
   isLocked: boolean;
+  isFreeDemo?: boolean;
 }
 
 interface Props {
@@ -209,7 +224,27 @@ Please generate a comprehensive, ready-to-publish content refresh:
           </button>
         </div>
       ) : (
-        <div className="space-y-8">
+          {/* Free Demo Preview Badge */}
+          {pageData.isFreeDemo && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-indigo-950/60 border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-base">🎁</span>
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-2">
+                    <span>Free Live Demo: #1 Highest-Loss Decayed Page Fully Unlocked</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300">Explore full ranking drop metrics, query shifts, and the AI action playbook below.</p>
+                </div>
+              </div>
+              <button
+                onClick={handleUnlock}
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shrink-0 shadow-md cursor-pointer"
+              >
+                Unlock All Posts • ₹999
+              </button>
+            </div>
+          )}
+
           {/* Traffic Metrics Grid with Sparkline Curve */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Clicks comparison */}
@@ -294,6 +329,36 @@ Please generate a comprehensive, ready-to-publish content refresh:
               {suggestion || 'Refresh outdated dates, verify search intent match against top 3 ranking competitors, and add FAQ structured points.'}
             </p>
           </div>
+
+          {/* Top Declining Search Queries Table */}
+          {pageData.topQueries && pageData.topQueries.length > 0 && (
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-xl">
+              <div className="px-6 py-4 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-white font-bold text-sm">
+                  <Search className="w-4 h-4 text-sky-400" />
+                  <span>Top Declining Search Queries & Rank Shifts</span>
+                </div>
+                <span className="text-[11px] text-slate-400">Search Console Query Breakdown</span>
+              </div>
+              <div className="divide-y divide-slate-800">
+                {pageData.topQueries.map((q) => (
+                  <div key={q.query} className="p-4 flex items-center justify-between gap-4 hover:bg-slate-800/30 transition-colors">
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-semibold text-white font-mono">{q.query}</span>
+                      <div className="text-[11px] text-slate-400">
+                        Avg Rank: <span className="text-slate-300 font-bold">{q.baselinePosition}</span> → <span className="text-rose-400 font-bold">{q.recentPosition}</span>
+                        {q.positionDelta > 0 && <span className="text-rose-400 text-[10px] ml-1">({q.positionDelta} pos drop)</span>}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-rose-400">-{q.clicksLost} Clicks</span>
+                      <div className="text-[10px] text-slate-500">{q.baselineClicks} → {q.recentClicks} clicks</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* SERP Intent Shift Analyzer (Competitor Comparison) */}
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 sm:p-8 space-y-6">

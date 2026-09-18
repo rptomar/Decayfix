@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import type { GscQueryMetric } from './gsc';
 
 export interface PageSuggestionInput {
   url: string;
@@ -7,32 +8,37 @@ export interface PageSuggestionInput {
   recentClicks: number;
   dropPercentClicks: number;
   dropPercentImpressions: number;
+  clicksLost?: number;
+  topQueries?: GscQueryMetric[] | Array<{ query: string; clicksLost: number; baselinePosition: number; recentPosition: number }>;
 }
 
 /**
- * Generates an AI-driven content refresh suggestion.
- * Prioritizes:
- * 1. Google Gemini API (100% Free tier on Google AI Studio - gemini-flash-latest / gemini-2.5-flash)
- * 2. Groq Cloud API (Free tier)
- * 3. Anthropic Claude API (Claude 3.5 Haiku)
- * 4. Built-in Smart Heuristic SEO Rule Engine (100% Free offline fallback)
+ * Generates a tailored, query-specific AI recovery playbook
  */
 export async function generateContentSuggestion(page: PageSuggestionInput): Promise<string> {
+  const queryLines = (page.topQueries || [])
+    .slice(0, 4)
+    .map((q) => `- Query: "${q.query}" | Lost: ${q.clicksLost || 0} clicks | Avg Rank: ${q.baselinePosition || '?'} → ${q.recentPosition || '?'}`)
+    .join('\n');
+
+  const queryContext = queryLines.length > 0
+    ? `\nTop Declining Search Queries on Google:\n${queryLines}\n`
+    : '';
+
   const prompt = `You are a senior SEO strategist and technical content auditor.
-The following web page has suffered organic search traffic decay:
-- Page URL: ${page.url}
-- Page Topic: ${page.title}
-- Baseline Clicks: ${page.baselineClicks}
-- Recent Clicks: ${page.recentClicks} (Drop: ${page.dropPercentClicks}%)
+The following web page has suffered organic search traffic decay on Google:
+- URL: ${page.url}
+- Title / Topic: ${page.title}
+- 8-Week Baseline Clicks: ${page.baselineClicks}
+- Recent Clicks: ${page.recentClicks} (Drop: ${page.dropPercentClicks}%, Lost: ${page.clicksLost || Math.max(0, page.baselineClicks - page.recentClicks)} clicks)
 - Impression Drop: ${page.dropPercentImpressions}%
+${queryContext}
+Provide a tailored, 2-to-3 sentence actionable recovery plan for this specific page.
+${queryLines.length > 0 ? 'CRITICAL REQUIREMENT: You MUST specifically mention the top declining search query and its ranking shift in your advice.' : ''}
+Give concrete advice tailored to the exact topic and query intent. Do NOT output generic boilerplate. Output strictly the advice text directly without introductory filler.`;
 
-Provide a concise, 2-to-3 sentence actionable recovery plan for this specific page.
-Give concrete advice tailored to the page type (for listing/location pages: update local rates, add area FAQs, schema markup, and high-intent title modifiers; for blog guides: refresh dates/facts, expand thin sections, and target People-Also-Ask queries).
-Keep your response strictly under 3 sentences. Output only the advice directly without introductory filler.`;
-
-  // 1. Check for Google Gemini API Key (GEMINI_API_KEY)
+  // 1. Google Gemini API
   const geminiKey = process.env.GEMINI_API_KEY;
-
   if (geminiKey && !geminiKey.startsWith('dummy_') && geminiKey.trim() !== '') {
     const modelsToTry = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-flash-latest'];
 
@@ -45,7 +51,7 @@ Keep your response strictly under 3 sentences. Output only the advice directly w
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { maxOutputTokens: 500, temperature: 0.3 },
+              generationConfig: { maxOutputTokens: 350, temperature: 0.4 },
             }),
             signal: AbortSignal.timeout(6000),
           }
@@ -56,12 +62,12 @@ Keep your response strictly under 3 sentences. Output only the advice directly w
           return text.trim();
         }
       } catch (err: any) {
-        console.warn(`Gemini API request failed on ${modelName}:`, err?.message || err);
+        console.warn(`Gemini API error on ${modelName}:`, err?.message || err);
       }
     }
   }
 
-  // 2. Check for Groq API (GROQ_API_KEY)
+  // 2. Groq Cloud API
   const groqKey = process.env.GROQ_API_KEY;
   if (groqKey && !groqKey.startsWith('dummy_') && groqKey.trim() !== '') {
     try {
@@ -74,8 +80,8 @@ Keep your response strictly under 3 sentences. Output only the advice directly w
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
           messages: [{ role: 'user', content: prompt }],
-          max_tokens: 250,
-          temperature: 0.3,
+          max_tokens: 300,
+          temperature: 0.4,
         }),
         signal: AbortSignal.timeout(6000),
       });
@@ -85,18 +91,18 @@ Keep your response strictly under 3 sentences. Output only the advice directly w
         return text.trim();
       }
     } catch (err: any) {
-      console.warn('Groq API call failed, falling back:', err?.message || err);
+      console.warn('Groq API error:', err?.message || err);
     }
   }
 
-  // 3. Check for Anthropic Claude API (ANTHROPIC_API_KEY)
+  // 3. Anthropic Claude API
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey && anthropicKey.startsWith('sk-ant-')) {
     try {
       const anthropic = new Anthropic({ apiKey: anthropicKey.trim() });
       const message = await anthropic.messages.create({
         model: 'claude-3-5-haiku-20241022',
-        max_tokens: 250,
+        max_tokens: 300,
         temperature: 0.3,
         messages: [{ role: 'user', content: prompt }],
       });
@@ -106,31 +112,29 @@ Keep your response strictly under 3 sentences. Output only the advice directly w
         return contentBlock.text.trim();
       }
     } catch (error: any) {
-      console.warn(`Anthropic API call failed for ${page.url}:`, error?.message || error);
+      console.warn(`Anthropic API error for ${page.url}:`, error?.message || error);
     }
   }
 
-  // 4. Built-in Smart Heuristic SEO Rule Engine (100% Free, Zero External API Dependency)
+  // 4. Built-in Dynamic Heuristic Engine (Query & Topic-Aware Fallback)
   return generateFallbackSuggestion(page);
 }
 
 /**
- * Smart Heuristic fallback suggestion generator
+ * Dynamic Heuristic fallback suggestion generator tailored with real query details
  */
-export function generateFallbackSuggestion(page: {
-  title: string;
-  dropPercentClicks: number;
-  baselineClicks: number;
-}): string {
-  const topic = page.title || 'this topic';
+export function generateFallbackSuggestion(page: PageSuggestionInput): string {
+  const topic = page.title || 'this page';
+  const topQ = page.topQueries?.[0];
+  const queryMention = topQ ? `specifically for "${topQ.query}" (which dropped from rank ${topQ.baselinePosition || 'top 5'} to ${topQ.recentPosition || 'lower results'})` : `for "${topic}"`;
 
-  if (page.dropPercentClicks >= 65) {
-    return `Major search intent shift detected. Audit the current top 3 Google SERP competitors for "${topic}" to identify newly added sections, update all dates/screenshots to the current year, and rewrite the introductory hook. Update the meta title and H1 tag with compelling power modifiers to regain lost CTR.`;
+  if (page.dropPercentClicks >= 60) {
+    return `Major search intent shift detected ${queryMention}. Audit current top 3 ranking competitors to cover newly added subheadings, refresh outdated pricing/statistics to the current year, and rewrite the meta title with high-CTR action keywords.`;
   }
 
-  if (page.dropPercentClicks >= 40) {
-    return `Notable ranking softness detected. Refresh outdated statistics, replace obsolete outbound references, and add a targeted 3-question FAQ section directly answering "People Also Ask" queries for "${topic}". Ensure internal links from your latest high-authority blog posts point directly to this URL.`;
+  if (page.dropPercentClicks >= 35) {
+    return `Ranking softness identified ${queryMention}. Expand thin content sections with recent case studies, add a targeted FAQ section answering "People Also Ask" search queries, and route 2-3 internal links from your highest-traffic pages to recover lost rank.`;
   }
 
-  return `Search impressions have softened. Expand thin content sections with recent examples, optimize header hierarchy (H2/H3) for target search terms, and test an updated title tag containing the current year to boost organic click-through rates.`;
+  return `Search impressions have softened ${queryMention}. Update the H1 and H2 tags with current search intent modifiers, refresh all outgoing references, and test an updated title tag containing the current year to lift organic CTR.`;
 }

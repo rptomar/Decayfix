@@ -24,6 +24,8 @@ export const POST: APIRoute = async ({ request }) => {
       recentClicks = 0,
       dropPercentClicks = 0,
       dropPercentImpressions = 0,
+      clicksLost = 0,
+      topQueries = [],
     } = body;
 
     if (!url) {
@@ -33,7 +35,7 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    // Generate high quality AI recommendation
+    // Generate high quality, query-specific AI recommendation
     const suggestion = await generateContentSuggestion({
       url,
       title: title || url,
@@ -41,6 +43,8 @@ export const POST: APIRoute = async ({ request }) => {
       recentClicks: Number(recentClicks),
       dropPercentClicks: Number(dropPercentClicks),
       dropPercentImpressions: Number(dropPercentImpressions),
+      clicksLost: Number(clicksLost),
+      topQueries,
     });
 
     // Update the database record asynchronously if available
@@ -48,7 +52,10 @@ export const POST: APIRoute = async ({ request }) => {
       try {
         await db
           .update(pages)
-          .set({ aiSuggestion: suggestion })
+          .set({
+            aiSuggestion: suggestion,
+            topQueries: topQueries.length > 0 ? JSON.stringify(topQueries) : undefined,
+          })
           .where(eq(pages.url, url));
       } catch (dbErr) {
         console.warn('[DecayFix] Could not persist AI suggestion to DB for URL:', url, dbErr);

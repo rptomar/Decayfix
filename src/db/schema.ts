@@ -110,12 +110,34 @@ export const pages = pgTable('pages', {
   baselineImpressions: integer('baselineImpressions').default(0).notNull(),
   recentClicks: integer('recentClicks').default(0).notNull(),
   recentImpressions: integer('recentImpressions').default(0).notNull(),
+  clicksLost: integer('clicksLost').default(0).notNull(),
   dropPercentClicks: numeric('dropPercentClicks', { precision: 6, scale: 2 }).default('0'),
   dropPercentImpressions: numeric('dropPercentImpressions', { precision: 6, scale: 2 }).default('0'),
   severityScore: numeric('severityScore', { precision: 10, scale: 2 }).default('0'),
   aiSuggestion: text('aiSuggestion'),
+  topQueries: text('topQueries'), // JSON string of top lost queries & position changes
   isFlagged: boolean('isFlagged').default(false).notNull(),
+  isSeasonal: boolean('isSeasonal').default(false).notNull(),
+  isRecovered: boolean('isRecovered').default(false).notNull(),
+  previousRecentClicks: integer('previousRecentClicks'),
   flaggedAt: timestamp('flaggedAt', { mode: 'date' }),
+  analyzedAt: timestamp('analyzedAt', { mode: 'date' }).defaultNow().notNull(),
+});
+
+/**
+ * Historical analysis snapshots for tracking recovery and progress
+ */
+export const analysisSnapshots = pgTable('analysisSnapshots', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  siteId: text('siteId')
+    .notNull()
+    .references(() => sites.id, { onDelete: 'cascade' }),
+  totalAnalyzed: integer('totalAnalyzed').default(0).notNull(),
+  totalFlagged: integer('totalFlagged').default(0).notNull(),
+  totalClicksLost: integer('totalClicksLost').default(0).notNull(),
+  healthScore: integer('healthScore').default(100).notNull(),
   analyzedAt: timestamp('analyzedAt', { mode: 'date' }).defaultNow().notNull(),
 });
 

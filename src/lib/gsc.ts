@@ -13,6 +13,18 @@ export interface GscPageMetric {
   position: number;
 }
 
+export interface GscQueryMetric {
+  query: string;
+  baselineClicks: number;
+  recentClicks: number;
+  clicksLost: number;
+  baselinePosition: number;
+  recentPosition: number;
+  positionDelta: number; // positive = dropped rank (e.g. 4.2 -> 11.6 = +7.4 worse)
+  baselineImpressions: number;
+  recentImpressions: number;
+}
+
 /**
  * Creates an authorized Google Search Console client using a refresh token or access token
  */
@@ -62,7 +74,7 @@ export async function fetchUserGscSites(
 }
 
 /**
- * Calculates date range strings (YYYY-MM-DD) for baseline and recent comparison windows
+ * Calculates date range strings (YYYY-MM-DD) for baseline, recent, and year-over-year comparison windows
  */
 export function getAnalysisDateRanges(windowDays = 56, lagDays = 3) {
   const now = new Date();
@@ -83,6 +95,12 @@ export function getAnalysisDateRanges(windowDays = 56, lagDays = 3) {
   const baselineStart = new Date(baselineEnd);
   baselineStart.setDate(baselineStart.getDate() - windowDays);
 
+  // Year-over-Year (YoY) comparison period = same window exactly 365 days prior
+  const yearAgoRecentStart = new Date(recentStart);
+  yearAgoRecentStart.setDate(yearAgoRecentStart.getDate() - 365);
+  const yearAgoRecentEnd = new Date(recentEnd);
+  yearAgoRecentEnd.setDate(yearAgoRecentEnd.getDate() - 365);
+
   const formatDate = (d: Date) => d.toISOString().split('T')[0];
 
   return {
@@ -94,11 +112,15 @@ export function getAnalysisDateRanges(windowDays = 56, lagDays = 3) {
       startDate: formatDate(baselineStart),
       endDate: formatDate(baselineEnd),
     },
+    yearAgo: {
+      startDate: formatDate(yearAgoRecentStart),
+      endDate: formatDate(yearAgoRecentEnd),
+    },
   };
 }
 
 /**
- * Queries Search Console page-level analytics with automatic candidate property matching (domain vs URL prefix)
+ * Queries Search Console page-level analytics with candidate property matching
  */
 export async function queryGscWithCandidates(
   gsc: ReturnType<typeof getGscClient>,
@@ -114,7 +136,6 @@ export async function queryGscWithCandidates(
     .replace(/\/$/, '')
     .toLowerCase();
 
-  // Try to list verified properties first to prioritize exact match
   let verifiedList: string[] = [];
   try {
     const listRes = await gsc.sites.list();
@@ -123,18 +144,12 @@ export async function queryGscWithCandidates(
     console.warn('Could not list GSC sites:', e);
   }
 
-  // Build candidate order
   const candidates: string[] = [];
-  
-  // 1. Check verified list for matches with domain
   for (const v of verifiedList) {
     const vClean = v.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/^sc-domain:/i, '').replace(/\/$/, '').toLowerCase();
-    if (vClean === cleanDomain) {
-      candidates.push(v);
-    }
+    if (vClean === cleanDomain) candidates.push(v);
   }
 
-  // 2. Add standard formats (domain property first!)
   candidates.push(`sc-domain:${cleanDomain}`);
   candidates.push(rawInputUrl);
   candidates.push(`https://${cleanDomain}/`);
@@ -142,17 +157,15 @@ export async function queryGscWithCandidates(
   candidates.push(`http://${cleanDomain}/`);
   candidates.push(`http://www.${cleanDomain}/`);
 
-  // Add any other verified properties
   for (const v of verifiedList) {
     if (!candidates.includes(v)) candidates.push(v);
   }
 
   const uniqueCandidates = Array.from(new Set(candidates.filter(Boolean)));
-  let lastError: any = null;
 
   for (const property of uniqueCandidates) {
     try {
-      console.log(`[DecayFix] Attempting GSC SearchAnalytics query on candidate property: "${property}"`);
+      console.log(`[DecayFix] Querying GSC candidate property: "${property}"`);
       const response = await gsc.searchanalytics.query({
         siteUrl: property,
         requestBody: {
@@ -178,21 +191,123 @@ export async function queryGscWithCandidates(
         }
       }
 
-      console.log(`[DecayFix] Successfully queried property "${property}"! Retrieved ${results.size} rows.`);
       return { metrics: results, propertyUsed: property };
     } catch (err: any) {
-      lastError = err;
-      console.warn(`[DecayFix] Property candidate "${property}" failed: ${err?.message || err}. Trying next candidate...`);
+      console.warn(`[DecayFix] Candidate "${property}" failed: ${err?.message || err}. Trying next...`);
     }
   }
 
   const verifiedMsg = verifiedList.length > 0 
-    ? `Verified properties found for this account: ${verifiedList.join(', ')}` 
-    : 'No verified Search Console properties were found for this Google account.';
+    ? `Verified properties found: ${verifiedList.join(', ')}` 
+    : 'No verified properties found for this account.';
 
   throw new Error(
-    `Google Account does not have permission for "${rawInputUrl}" in Google Search Console. ${verifiedMsg}. Please add this email in Search Console Settings > Users & Permissions, or sign in with the Google account that owns the site.`
+    `Google Account does not have permission for "${rawInputUrl}" in Google Search Console. ${verifiedMsg}.`
   );
+}
+
+/**
+ * Queries detailed query-level data for pages (dimensions: ['page', 'query'])
+ * Computes lost queries, click drops, and position movements per page
+ */
+export async function queryGscPageQueries(
+  gsc: ReturnType<typeof getGscClient>,
+  propertyUsed: string,
+  recentStartDate: string,
+  recentEndDate: string,
+  baselineStartDate: string,
+  baselineEndDate: string,
+  rowLimit = 5000
+): Promise<Map<string, GscQueryMetric[]>> {
+  const pageQueriesMap = new Map<string, GscQueryMetric[]>();
+
+  try {
+    // 1. Fetch baseline page+query rows
+    const baselineRes = await gsc.searchanalytics.query({
+      siteUrl: propertyUsed,
+      requestBody: {
+        startDate: baselineStartDate,
+        endDate: baselineEndDate,
+        dimensions: ['page', 'query'],
+        rowLimit,
+      },
+    });
+
+    // 2. Fetch recent page+query rows
+    const recentRes = await gsc.searchanalytics.query({
+      siteUrl: propertyUsed,
+      requestBody: {
+        startDate: recentStartDate,
+        endDate: recentEndDate,
+        dimensions: ['page', 'query'],
+        rowLimit,
+      },
+    });
+
+    const recentQueryMap = new Map<string, { clicks: number; impressions: number; position: number }>();
+    for (const row of recentRes.data.rows || []) {
+      const page = row.keys?.[0];
+      const query = row.keys?.[1];
+      if (page && query) {
+        const key = `${page}:::${query}`;
+        recentQueryMap.set(key, {
+          clicks: Math.round(row.clicks || 0),
+          impressions: Math.round(row.impressions || 0),
+          position: Number((row.position || 0).toFixed(1)),
+        });
+      }
+    }
+
+    const baselineGrouped = new Map<string, Array<{ query: string; clicks: number; impressions: number; position: number }>>();
+    for (const row of baselineRes.data.rows || []) {
+      const page = row.keys?.[0];
+      const query = row.keys?.[1];
+      if (page && query) {
+        const list = baselineGrouped.get(page) || [];
+        list.push({
+          query,
+          clicks: Math.round(row.clicks || 0),
+          impressions: Math.round(row.impressions || 0),
+          position: Number((row.position || 0).toFixed(1)),
+        });
+        baselineGrouped.set(page, list);
+      }
+    }
+
+    for (const [page, bQueries] of baselineGrouped.entries()) {
+      const queryMetrics: GscQueryMetric[] = [];
+
+      for (const bq of bQueries) {
+        const key = `${page}:::${bq.query}`;
+        const rq = recentQueryMap.get(key) || { clicks: 0, impressions: 0, position: 50 };
+        const clicksLost = Math.max(0, bq.clicks - rq.clicks);
+        const positionDelta = Number((rq.position - bq.position).toFixed(1));
+
+        // Include queries that had meaningful baseline activity or lost traffic
+        if (bq.clicks >= 2 || clicksLost >= 2 || bq.impressions >= 50) {
+          queryMetrics.push({
+            query: bq.query,
+            baselineClicks: bq.clicks,
+            recentClicks: rq.clicks,
+            clicksLost,
+            baselinePosition: bq.position,
+            recentPosition: rq.position,
+            positionDelta,
+            baselineImpressions: bq.impressions,
+            recentImpressions: rq.impressions,
+          });
+        }
+      }
+
+      // Sort queries by highest lost clicks first, then by impressions
+      queryMetrics.sort((a, b) => b.clicksLost - a.clicksLost || b.baselineImpressions - a.baselineImpressions);
+      pageQueriesMap.set(page, queryMetrics.slice(0, 10));
+    }
+  } catch (err: any) {
+    console.warn('[DecayFix] Query dimension fetch warning (proceeding with page-level metrics):', err?.message || err);
+  }
+
+  return pageQueriesMap;
 }
 
 /**

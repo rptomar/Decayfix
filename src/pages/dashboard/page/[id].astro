@@ -6,7 +6,7 @@ import { db, pages, sites } from '@/db';
 import { eq, and, desc } from 'drizzle-orm';
 import { checkSiteUnlockStatus } from '@/lib/entitlement';
 import { extractTitleFromUrl } from '@/lib/analyzer';
-import { FREE_TIER_PAGE_LIMIT } from '@/lib/constants';
+import { FREE_PREVIEW_DETAIL_LIMIT } from '@/lib/constants';
 
 export const prerender = false;
 
@@ -26,17 +26,19 @@ if (!targetUrl) {
 // Check entitlement
 const entitlement = await checkSiteUnlockStatus(userId);
 
-let pageData = {
+let pageData: any = {
   url: targetUrl,
   title: extractTitleFromUrl(targetUrl),
   baselineClicks: 380,
   baselineImpressions: 8900,
   recentClicks: 120,
   recentImpressions: 3400,
+  clicksLost: 260,
   dropPercentClicks: 68.4,
   dropPercentImpressions: 61.8,
   severityScore: 320,
   aiSuggestion: 'Audit competing top 3 ranking articles to identify newly covered subtopics, update all dates/screenshots to the current year, and rewrite the introductory hook. Refresh the meta title and H1 tag with high-CTR power words.',
+  topQueries: [],
   isFlagged: true,
   isLocked: false,
 };
@@ -55,7 +57,15 @@ if (db) {
         .orderBy(desc(pages.severityScore));
 
       const pageIndex = allFlagged.findIndex((item) => item.id === p.id);
-      const isLocked = !entitlement.isUnlocked && pageIndex >= FREE_TIER_PAGE_LIMIT;
+      // Top #1 page (pageIndex === 0) is fully unlocked as a live demo!
+      const isLocked = !entitlement.isUnlocked && pageIndex >= FREE_PREVIEW_DETAIL_LIMIT;
+
+      let topQueries = [];
+      if (p.topQueries) {
+        try {
+          topQueries = JSON.parse(p.topQueries);
+        } catch {}
+      }
 
       pageData = {
         url: p.url,
@@ -64,12 +74,15 @@ if (db) {
         baselineImpressions: p.baselineImpressions,
         recentClicks: p.recentClicks,
         recentImpressions: p.recentImpressions,
+        clicksLost: p.clicksLost || Math.max(0, p.baselineClicks - p.recentClicks),
         dropPercentClicks: Number(p.dropPercentClicks),
         dropPercentImpressions: Number(p.dropPercentImpressions),
         severityScore: Number(p.severityScore),
         aiSuggestion: isLocked ? null : p.aiSuggestion,
+        topQueries: isLocked ? [] : topQueries,
         isFlagged: p.isFlagged,
         isLocked,
+        isFreeDemo: !entitlement.isUnlocked && pageIndex === 0,
       };
     }
   } catch (err) {
