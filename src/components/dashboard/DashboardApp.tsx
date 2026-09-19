@@ -223,9 +223,9 @@ Please provide:
     if (!hasRunAnalysis || analyzing) return;
     if (isCookingRef.current) return;
 
-    // Find the next eligible flagged page that needs an AI suggestion
+    // Find the next eligible unlocked preview page that needs an AI suggestion
     const ungeneratedPage = analysisResults.find(
-      (p) => p.isFlagged && !p.isLocked && (!p.aiSuggestion || p.aiSuggestion.trim() === '')
+      (p) => !p.isLocked && (!p.aiSuggestion || p.aiSuggestion.trim() === '')
     );
 
     if (!ungeneratedPage) {
@@ -677,7 +677,7 @@ Please provide:
             className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold text-sm shadow-lg shadow-indigo-600/20 transition-all hover:scale-[1.02] cursor-pointer"
           >
             <RefreshCw className={`w-4 h-4 ${analyzing ? 'animate-spin' : ''}`} />
-            <span>{analyzing ? 'Analyzing Search Data...' : 'Analyze My Site'}</span>
+            <span>{analyzing ? 'Analyzing Search Data...' : (hasRunAnalysis ? 'Re-analyze Site' : 'Analyze My Site')}</span>
           </button>
         </div>
       </form>
@@ -788,14 +788,14 @@ Please provide:
 
           {/* Progressive AI Generation Status Banner */}
           {(() => {
-            const eligibleFlaggedPages = analysisResults.filter((p) => p.isFlagged && !p.isLocked);
-            const completedAiPages = eligibleFlaggedPages.filter((p) => p.aiSuggestion && p.aiSuggestion.trim() !== '');
-            const isGeneratingAi = eligibleFlaggedPages.length > 0 && completedAiPages.length < eligibleFlaggedPages.length;
-            const aiProgressPct = eligibleFlaggedPages.length > 0 ? Math.round((completedAiPages.length / eligibleFlaggedPages.length) * 100) : 100;
+            const eligiblePages = analysisResults.filter((p) => !p.isLocked);
+            const completedAiPages = eligiblePages.filter((p) => p.aiSuggestion && p.aiSuggestion.trim() !== '');
+            const isGeneratingAi = eligiblePages.length > 0 && completedAiPages.length < eligiblePages.length;
+            const aiProgressPct = eligiblePages.length > 0 ? Math.round((completedAiPages.length / eligiblePages.length) * 100) : 100;
 
             return (
               <>
-                {eligibleFlaggedPages.length > 0 && (
+                {eligiblePages.length > 0 && (
                   <div className={`p-4 rounded-xl border transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg ${
                     isGeneratingAi
                       ? 'bg-indigo-950/40 border-indigo-500/40 text-indigo-200 shadow-indigo-500/5'
@@ -817,8 +817,8 @@ Please provide:
                         <div className="text-xs font-bold flex items-center gap-2">
                           <span>
                             {isGeneratingAi
-                              ? `Generating AI Action Plans: ${completedAiPages.length} of ${eligibleFlaggedPages.length} ready`
-                              : `All ${eligibleFlaggedPages.length} AI Action Plans Generated & Ready!`}
+                              ? `Generating AI Action Plans: ${completedAiPages.length} of ${eligiblePages.length} ready`
+                              : `All ${eligiblePages.length} AI Action Plans Generated & Ready!`}
                           </span>
                           {isGeneratingAi && (
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-normal border border-indigo-500/30">
@@ -854,9 +854,20 @@ Please provide:
                     <span className="text-sm font-bold text-white uppercase tracking-wider">
                       Flagged Decaying Posts (Ranked by Absolute Lost Clicks)
                     </span>
-                    <span className="text-xs text-slate-400">
-                      Sorted by highest traffic lost & % drop
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleRunAnalysis()}
+                        disabled={analyzing}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors cursor-pointer"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${analyzing ? 'animate-spin text-indigo-400' : 'text-slate-400'}`} />
+                        <span>{analyzing ? 'Refreshing...' : 'Re-analyze'}</span>
+                      </button>
+                      <span className="hidden sm:inline text-xs text-slate-400">
+                        Sorted by highest traffic lost & % drop
+                      </span>
+                    </div>
                   </div>
 
                   <div className="divide-y divide-slate-800">

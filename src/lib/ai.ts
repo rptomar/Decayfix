@@ -37,10 +37,10 @@ Provide a tailored, 2-to-3 sentence actionable recovery plan for this specific p
 ${queryLines.length > 0 ? 'CRITICAL REQUIREMENT: You MUST specifically mention the top declining search query and its ranking shift in your advice.' : ''}
 Give concrete advice tailored to the exact topic and query intent. Do NOT output generic boilerplate. Output strictly the advice text directly without introductory filler.`;
 
-  // 1. Google Gemini API
-  const geminiKey = process.env.GEMINI_API_KEY;
+  // 1. Google Gemini API (Latest 2.0 & 1.5 Pro/Flash)
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_API_KEY;
   if (geminiKey && !geminiKey.startsWith('dummy_') && geminiKey.trim() !== '') {
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-flash-latest'];
+    const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'];
 
     for (const modelName of modelsToTry) {
       try {

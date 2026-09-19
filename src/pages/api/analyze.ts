@@ -61,6 +61,22 @@ export const POST: APIRoute = async ({ request }) => {
       } catch (dbErr) {
         console.warn('Could not query site record from DB:', dbErr);
       }
+
+      if (!siteRecord && targetSiteUrl) {
+        try {
+          const inserted = await db
+            .insert(sites)
+            .values({
+              userId,
+              siteUrl: targetSiteUrl,
+              permissionLevel: 'siteOwner',
+            })
+            .returning();
+          siteRecord = inserted[0];
+        } catch (insertSiteErr) {
+          console.warn('Could not auto-create site record in DB:', insertSiteErr);
+        }
+      }
     }
 
     const siteUrl = targetSiteUrl || siteRecord?.siteUrl || 'https://example.com';

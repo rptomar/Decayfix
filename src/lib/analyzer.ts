@@ -166,6 +166,12 @@ export async function fetchRealPageTitle(url: string): Promise<string> {
         .replace(/&gt;/g, '>')
         .replace(/&#39;/g, "'")
         .replace(/&quot;/g, '"')
+        .replace(/&#x2F;/gi, '/')
+        .replace(/&#47;/g, '/')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&#8211;/g, '–')
+        .replace(/&#8212;/g, '—')
+        .replace(/&#x27;/g, "'")
         .trim();
 
       // Strip trailing brand boilerplate (e.g. " | Godamwala", " - MyBrand")
