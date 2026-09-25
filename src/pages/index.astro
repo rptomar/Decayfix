@@ -2,10 +2,20 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import CompetitorScanner from '@/components/home/CompetitorScanner';
 import { getSession } from '@/lib/session';
+import { checkSiteUnlockStatus } from '@/lib/entitlement';
+
+export const prerender = false;
 
 const session = await getSession(Astro.request);
 const isAuthenticated = !!session?.user?.id;
+const user = session?.user;
 const userName = session?.user?.name?.split(' ')[0] || '';
+
+let isUnlocked = false;
+if (user?.id || user?.email) {
+  const entitlement = await checkSiteUnlockStatus(user.id || '', null, user.email || undefined);
+  isUnlocked = entitlement.isUnlocked;
+}
 ---
 
 <BaseLayout title="Find & Fix Decaying Search Traffic on Your Blog">
@@ -196,7 +206,12 @@ const userName = session?.user?.name?.split(' ')[0] || '';
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       <!-- Free Preview Card -->
-      <div class="rounded-2xl border border-slate-800 bg-slate-900 p-8 flex flex-col justify-between">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900 p-8 flex flex-col justify-between relative">
+        {isAuthenticated && !isUnlocked && (
+          <div class="absolute -top-3 right-6 px-3 py-0.5 bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold rounded-full uppercase tracking-wider">
+            Your Current Plan
+          </div>
+        )}
         <div>
           <div class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Free Preview</div>
           <div class="text-4xl font-extrabold text-white mb-4">$0</div>
@@ -225,7 +240,7 @@ const userName = session?.user?.name?.split(' ')[0] || '';
             href="/dashboard"
             class="mt-8 block text-center py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-colors"
           >
-            Open Dashboard
+            {isUnlocked ? 'Go to Dashboard' : 'Open Current Dashboard'}
           </a>
         ) : (
           <a
@@ -238,16 +253,30 @@ const userName = session?.user?.name?.split(' ')[0] || '';
       </div>
 
       <!-- Paid Unlock Card -->
-      <div class="rounded-2xl border-2 border-indigo-500 bg-slate-900/90 p-8 flex flex-col justify-between relative shadow-xl shadow-indigo-500/10">
-        <div class="absolute -top-3.5 right-6 px-3 py-1 bg-indigo-500 text-white text-xs font-bold rounded-full uppercase tracking-wider">
-          One-Time Payment
-        </div>
+      <div class={`rounded-2xl border-2 ${isUnlocked ? 'border-emerald-500/80 bg-slate-900/95 shadow-emerald-500/10' : 'border-indigo-500 bg-slate-900/90 shadow-indigo-500/10'} p-8 flex flex-col justify-between relative shadow-xl`}>
+        {isUnlocked ? (
+          <div class="absolute -top-3.5 right-6 px-3.5 py-1 bg-emerald-500 text-white text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1 shadow-lg shadow-emerald-500/20">
+            <span>✓ Current Active Plan</span>
+          </div>
+        ) : (
+          <div class="absolute -top-3.5 right-6 px-3 py-1 bg-indigo-500 text-white text-xs font-bold rounded-full uppercase tracking-wider">
+            One-Time Payment
+          </div>
+        )}
         <div>
-          <div class="text-sm font-semibold text-indigo-400 uppercase tracking-wider mb-2">Full Site Report</div>
+          <div class={`text-sm font-semibold ${isUnlocked ? 'text-emerald-400' : 'text-indigo-400'} uppercase tracking-wider mb-2`}>Full Site Report</div>
           <div class="flex items-baseline gap-2 mb-4">
             <span class="text-4xl font-extrabold text-white">₹999</span>
             <span class="text-sm text-slate-400 font-normal">one-time / site</span>
           </div>
+
+          {isUnlocked && (
+            <div class="p-3.5 rounded-xl bg-emerald-950/70 border border-emerald-500/40 text-emerald-200 text-xs flex items-center gap-2 mb-4 font-medium">
+              <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold shrink-0">✓</span>
+              <span>Lifetime Pro Active: All posts & Claude AI suggestions unlocked for your account.</span>
+            </div>
+          )}
+
           <p class="text-sm text-slate-400 mb-6">Permanent access to all decaying posts and AI suggestions.</p>
           <ul class="space-y-3 text-sm text-slate-300">
             <li class="flex items-center gap-2">
@@ -268,12 +297,22 @@ const userName = session?.user?.name?.split(' ')[0] || '';
             </li>
           </ul>
         </div>
-        {isAuthenticated ? (
+        {isUnlocked ? (
+          <a
+            href="/dashboard"
+            class="mt-8 block text-center py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+          >
+            <span>✓ Open Unlocked Dashboard</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </a>
+        ) : isAuthenticated ? (
           <a
             href="/dashboard"
             class="mt-8 block text-center py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-600/30 transition-all hover:scale-[1.02]"
           >
-            Go to Dashboard & Unlock
+            Upgrade in Dashboard • ₹999
           </a>
         ) : (
           <a

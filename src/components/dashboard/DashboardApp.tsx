@@ -8,19 +8,21 @@ import {
   RefreshCw, 
   Globe, 
   CheckCircle2, 
-  TrendingDown,
-  ShieldCheck,
-  ChevronRight,
-  Share2,
-  Copy,
-  Check,
-  Bell,
-  Mail,
-  BarChart3,
-  Download,
-  Award,
-  Calendar,
-  X
+  TrendingDown, 
+  ShieldCheck, 
+  ChevronRight, 
+  Share2, 
+  Copy, 
+  Check, 
+  Bell, 
+  Mail, 
+  BarChart3, 
+  Download, 
+  Award, 
+  Calendar, 
+  X,
+  Square,
+  Play
 } from 'lucide-react';
 import Sparkline from '@/components/common/Sparkline';
 import SubscriptionRequestModal from '@/components/common/SubscriptionRequestModal';
@@ -133,8 +135,10 @@ export default function DashboardApp({
   const [digestEmail, setDigestEmail] = useState(user.email || '');
   const [digestEnabled, setDigestEnabled] = useState(true);
   const [digestSaved, setDigestSaved] = useState(false);
+  const [isAiStopped, setIsAiStopped] = useState(false);
 
   const isCookingRef = useRef(false);
+  const stopAiRef = useRef(false);
 
   const handleCopyPrompt = (page: PageItem) => {
     const topQ = page.topQueries?.[0];
@@ -234,7 +238,7 @@ Please provide:
 
   // Progressive One-by-One AI Action Plan Generator
   useEffect(() => {
-    if (!hasRunAnalysis || analyzing) return;
+    if (!hasRunAnalysis || analyzing || isAiStopped || stopAiRef.current) return;
     if (isCookingRef.current) return;
 
     // Find the next eligible unlocked preview page that needs an AI suggestion
@@ -388,6 +392,8 @@ Please provide:
     console.log('[DecayFix] Running analysis on site:', url);
     setAnalyzing(true);
     setErrorMsg(null);
+    setIsAiStopped(false);
+    stopAiRef.current = false;
 
     try {
       const res = await fetch('/api/analyze', {
@@ -745,17 +751,24 @@ Please provide:
             const completedAiPages = eligiblePages.filter((p) => p.aiSuggestion && p.aiSuggestion.trim() !== '');
             const isGeneratingAi = eligiblePages.length > 0 && completedAiPages.length < eligiblePages.length;
             const aiProgressPct = eligiblePages.length > 0 ? Math.round((completedAiPages.length / eligiblePages.length) * 100) : 100;
+            const isPaused = isAiStopped && isGeneratingAi;
 
             return (
               <>
                 {eligiblePages.length > 0 && (
-                  <div className={`p-4 rounded-xl border transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg ${
-                    isGeneratingAi
+                  <div className={`p-4 rounded-xl border transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg ${
+                    isPaused
+                      ? 'bg-amber-950/30 border-amber-500/40 text-amber-200 shadow-amber-500/5'
+                      : isGeneratingAi
                       ? 'bg-indigo-950/40 border-indigo-500/40 text-indigo-200 shadow-indigo-500/5'
                       : 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300 shadow-emerald-500/5'
                   }`}>
                     <div className="flex items-center gap-3">
-                      {isGeneratingAi ? (
+                      {isPaused ? (
+                        <div className="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+                          <Square className="w-3.5 h-3.5 fill-current" />
+                        </div>
+                      ) : isGeneratingAi ? (
                         <div className="relative flex items-center justify-center w-6 h-6 shrink-0">
                           <Sparkles className="w-4 h-4 text-indigo-400 animate-spin" />
                           <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
@@ -769,35 +782,77 @@ Please provide:
                       <div>
                         <div className="text-xs font-bold flex items-center gap-2">
                           <span>
-                            {isGeneratingAi
+                            {isPaused
+                              ? `AI Action Plan Generation Paused: ${completedAiPages.length} of ${eligiblePages.length} ready`
+                              : isGeneratingAi
                               ? `Generating AI Action Plans: ${completedAiPages.length} of ${eligiblePages.length} ready`
                               : `All ${eligiblePages.length} AI Action Plans Generated & Ready!`}
                           </span>
-                          {isGeneratingAi && (
+                          {isPaused ? (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-medium border border-amber-500/30">
+                              Paused
+                            </span>
+                          ) : isGeneratingAi ? (
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-normal border border-indigo-500/30">
                               Cooking live one-by-one
                             </span>
-                          )}
+                          ) : null}
                         </div>
                         <p className="text-[11px] opacity-75 mt-0.5">
-                          {isGeneratingAi
+                          {isPaused
+                            ? `Generation paused by user. ${eligiblePages.length - completedAiPages.length} remaining playbooks can be resumed anytime.`
+                            : isGeneratingAi
                             ? 'Your decayed pages are ready instantly below. AI recovery playbooks are generating sequentially in real-time.'
                             : 'Copy ready-to-use prompts formatted for ChatGPT, Claude, or your content writers.'}
                         </p>
                       </div>
                     </div>
 
-                    {isGeneratingAi && (
-                      <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
-                        <span className="text-[11px] font-mono text-indigo-300 font-bold">{aiProgressPct}%</span>
-                        <div className="w-28 sm:w-36 bg-slate-950 rounded-full h-2 border border-slate-700 overflow-hidden">
-                          <div
-                            className="bg-gradient-to-r from-indigo-500 to-sky-400 h-full transition-all duration-500 rounded-full"
-                            style={{ width: `${aiProgressPct}%` }}
-                          />
+                    <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+                      {isGeneratingAi && !isPaused && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAiStopped(true);
+                            stopAiRef.current = true;
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold transition-colors cursor-pointer"
+                          title="Stop generating AI action plans"
+                        >
+                          <Square className="w-3 h-3 fill-current text-rose-400" />
+                          <span>Stop AI Generation</span>
+                        </button>
+                      )}
+
+                      {isPaused && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAiStopped(false);
+                            stopAiRef.current = false;
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+                          title="Resume generating remaining AI action plans"
+                        >
+                          <Play className="w-3 h-3 fill-current text-white" />
+                          <span>Resume Generation</span>
+                        </button>
+                      )}
+
+                      {isGeneratingAi && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-mono font-bold">{aiProgressPct}%</span>
+                          <div className="w-24 sm:w-32 bg-slate-950 rounded-full h-2 border border-slate-700 overflow-hidden">
+                            <div
+                              className={`h-full transition-all duration-500 rounded-full ${
+                                isPaused ? 'bg-amber-400' : 'bg-gradient-to-r from-indigo-500 to-sky-400'
+                              }`}
+                              style={{ width: `${aiProgressPct}%` }}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 )}
 
