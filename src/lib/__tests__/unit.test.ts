@@ -237,8 +237,32 @@ async function runTests() {
   console.assert(adminOverviewWithReq.summary.subscriptionRequestsCount >= 1, 'Admin overview must reflect subscription requests count');
   console.log('✓ Test 14: Subscription request creation, retrieval & admin overview integration passed');
 
+  // Test 15: Support Ticket System & Admin Overview Integration
+  const { createSupportTicket, getAllSupportTickets, updateSupportTicket } = await import('../supportTickets');
+  const ticket = await createSupportTicket({
+    email: 'user_support@example.com',
+    name: 'Sarah Blogger',
+    subject: 'Question on Content Decay algorithm',
+    category: 'data_accuracy',
+    siteUrl: 'https://sarahblog.com',
+    message: 'How is the 20% traffic drop threshold calculated against 16-month historical baseline?',
+  });
+  console.assert(ticket.id.length > 0, 'Support ticket must generate an ID');
+  console.assert(ticket.status === 'open', 'Initial support ticket status must be open');
+
+  const allTickets = await getAllSupportTickets();
+  const foundTicket = allTickets.find((t) => t.id === ticket.id);
+  console.assert(foundTicket !== undefined, 'Created ticket must be retrieved in getAllSupportTickets');
+
+  const updatedTicketOk = await updateSupportTicket(ticket.id, { status: 'resolved' });
+  console.assert(updatedTicketOk === true, 'Updating support ticket status must succeed');
+
+  const adminOverviewWithTickets = await getAdminAnalyticsOverview('all');
+  console.assert(adminOverviewWithTickets.summary.supportTicketsCount >= 1, 'Admin overview must reflect support tickets count');
+  console.log('✓ Test 15: Support ticket creation, retrieval, update & admin integration passed');
+
   console.log('\n======================================================');
-  console.log('  All 14 core automated verification test suites passed! 🎉');
+  console.log('  All 15 core automated verification test suites passed! 🎉');
   console.log('======================================================\n');
 }
 

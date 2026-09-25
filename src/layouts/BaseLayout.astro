@@ -100,6 +100,8 @@ const fullTitle = title.includes('DecayFix') ? title : `${title} | ${siteName}`;
 
           <nav class="flex items-center gap-3 sm:gap-5 text-sm font-medium text-slate-300">
             <a href="/pricing" class="hover:text-white transition-colors">Pricing</a>
+            <a href="/contact" class="hover:text-white transition-colors">Contact</a>
+            <a href="/support" class="hover:text-white transition-colors">Support</a>
             
             {!isAuthenticated ? (
               <>
@@ -116,9 +118,6 @@ const fullTitle = title.includes('DecayFix') ? title : `${title} | ${siteName}`;
               </>
             ) : !isDashboard ? (
               <>
-                <a href="/dashboard" class="hidden sm:inline-block text-slate-300 hover:text-white transition-colors">
-                  Dashboard
-                </a>
                 <a
                   href="/dashboard"
                   class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm shadow-md shadow-indigo-600/20 transition-all hover:scale-[1.02]"
@@ -190,8 +189,10 @@ const fullTitle = title.includes('DecayFix') ? title : `${title} | ${siteName}`;
             <span class="text-xs text-slate-400">Accelerated Intelligence for Continuous Search Traffic Optimization</span>
           </div>
           
-          <div class="flex items-center gap-6 text-xs">
+          <div class="flex flex-wrap items-center gap-4 sm:gap-6 text-xs">
             <a href="/pricing" class="hover:text-slate-200 transition-colors">Pricing</a>
+            <a href="/contact" class="hover:text-slate-200 transition-colors">Contact</a>
+            <a href="/support" class="hover:text-slate-200 transition-colors">Support</a>
             <a href="/privacy" class="hover:text-slate-200 transition-colors">Privacy Policy</a>
             <a href="/terms" class="hover:text-slate-200 transition-colors">Terms of Service</a>
             <a href="/admin" class="text-slate-500 hover:text-indigo-400 transition-colors font-medium">Admin Portal</a>

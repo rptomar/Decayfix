@@ -1,0 +1,115 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getSession } from '@/lib/session';
+
+export const prerender = false;
+
+const session = await getSession(Astro.request);
+const user = session?.user;
+---
+
+<BaseLayout
+  title="Contact Us — DecayFix by SprintLabs.ai"
+  description="Get in touch with the DecayFix & SprintLabs.ai team for custom content audits, Search Console support, partnerships, or billing questions."
+>
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 py-20">
+    <div class="text-center max-w-xl mx-auto mb-12">
+      <div class="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 mx-auto mb-4 font-black text-xl">
+        ✉️
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-white mb-3 tracking-tight">
+        Contact DecayFix Team
+      </h1>
+      <p class="text-slate-300 text-sm sm:text-base">
+        Direct assistance from the engineers and SEO strategists at SprintLabs.ai.
+      </p>
+    </div>
+
+    <div class="space-y-8">
+      {/* Official Email Island */}
+      <div class="rounded-2xl border border-sky-500/40 bg-gradient-to-br from-sky-950/40 via-slate-900 to-slate-900 p-6 sm:p-8 shadow-2xl">
+        <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-sky-400 mb-3">
+          <span>Official Communication Channel</span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-950 border border-slate-800 mb-6">
+          <div class="font-mono text-base sm:text-lg font-bold text-white select-all">
+            sprintlabsai@gmail.com
+          </div>
+          <div class="flex items-center gap-3">
+            <a
+              href="mailto:sprintlabsai@gmail.com?subject=DecayFix Inquiry"
+              class="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-lg shadow-sky-600/30 transition-all hover:scale-105 inline-flex items-center gap-2"
+            >
+              <span>Send Email Directly</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-300">
+          <div class="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1.5">
+            <div class="font-bold text-white flex items-center gap-1.5">
+              <span>⚡</span> Guaranteed Response Time
+            </div>
+            <p class="text-slate-400 leading-relaxed">
+              We respond to all verified emails within <strong>4–12 hours</strong> (max 24h during holidays).
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1.5">
+            <div class="font-bold text-white flex items-center gap-1.5">
+              <span>🛡️</span> Technical & Account Assistance
+            </div>
+            <p class="text-slate-400 leading-relaxed">
+              Include your domain name (e.g. <code>godamwala.com</code>) so our engineers can review immediately.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Guidelines & Support Alternative */}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-3 text-xs">
+          <h3 class="font-bold text-white text-sm">Common Topics Handled via Email:</h3>
+          <ul class="space-y-2 text-slate-300">
+            <li class="flex items-start gap-2">
+              <span class="text-sky-400">•</span>
+              <span>Enterprise & multi-site bulk report volume inquiries</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-sky-400">•</span>
+              <span>Payment gateway maintenance & manual UPI/card invoices</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-sky-400">•</span>
+              <span>Custom Google Search Console permission verification</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-sky-400">•</span>
+              <span>Agency partnerships & white-label audit reports</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="rounded-2xl border border-indigo-500/30 bg-indigo-950/20 p-6 flex flex-col justify-between space-y-4">
+          <div class="space-y-2">
+            <h3 class="font-bold text-white text-sm flex items-center gap-2">
+              <span>🎫</span> Need to file a structured support ticket?
+            </h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              You can submit a ticket through our interactive help desk with category diagnostics for expedited resolution.
+            </p>
+          </div>
+
+          <a
+            href="/support"
+            class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs text-center shadow-md shadow-indigo-600/30 transition-all hover:scale-[1.02]"
+          >
+            Open Support Ticket Form →
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

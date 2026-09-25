@@ -28,7 +28,10 @@ import {
   Sliders,
   Check,
   X,
-  UserPlus
+  UserPlus,
+  HelpCircle,
+  MessageSquare,
+  Tag
 } from 'lucide-react';
 
 interface AdminUser {
@@ -45,7 +48,7 @@ interface Props {
 
 export default function AdminDashboard({ admin }: Props) {
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'requests' | 'users' | 'subscriptions' | 'sites' | 'ai' | 'api' | 'visits'
+    'overview' | 'requests' | 'tickets' | 'users' | 'subscriptions' | 'sites' | 'ai' | 'api' | 'visits'
   >('overview');
   const [timeRange, setTimeRange] = useState<'today' | '7d' | '30d' | 'all'>('all');
   const [loading, setLoading] = useState(true);
@@ -67,6 +70,7 @@ export default function AdminDashboard({ admin }: Props) {
     | 'ai'
     | 'unlock_clicks'
     | 'requests'
+    | 'tickets'
     | 'revenue'
   >(null);
 
@@ -200,6 +204,37 @@ export default function AdminDashboard({ admin }: Props) {
     }
   };
 
+  // Handle Support Ticket Status Change
+  const handleUpdateTicketStatus = async (ticketId: string, newStatus: string, adminNotes?: string) => {
+    try {
+      await fetch('/api/admin/support-tickets', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: ticketId,
+          status: newStatus,
+          adminNotes,
+        }),
+      });
+      fetchStats();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Handle Support Ticket Delete
+  const handleDeleteTicket = async (ticketId: string) => {
+    if (!confirm('Are you sure you want to delete this ticket?')) return;
+    try {
+      await fetch(`/api/admin/support-tickets?id=${ticketId}`, {
+        method: 'DELETE',
+      });
+      fetchStats();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // Handle Admin Logout
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
@@ -212,10 +247,17 @@ export default function AdminDashboard({ admin }: Props) {
   const allSites: any[] = data?.allSites || [];
   const allPurchases: any[] = data?.allPurchases || [];
   const subscriptionRequests: any[] = data?.subscriptionRequests || [];
+  const supportTickets: any[] = data?.supportTickets || [];
 
   // Filter lists based on search
   const filteredRequests = subscriptionRequests.filter((r) =>
     `${r.email} ${r.userName || ''} ${r.siteUrl || ''} ${r.status} ${r.source}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  );
+
+  const filteredTickets = supportTickets.filter((t) =>
+    `${t.email} ${t.name || ''} ${t.subject || ''} ${t.category || ''} ${t.siteUrl || ''} ${t.message || ''} ${t.status}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
@@ -308,6 +350,12 @@ export default function AdminDashboard({ admin }: Props) {
               label: '📥 Subscription Requests', 
               badge: summary.pendingSubscriptionRequestsCount > 0 ? summary.pendingSubscriptionRequestsCount : null,
               badgeColor: 'bg-amber-500 text-slate-950 font-bold'
+            },
+            {
+              id: 'tickets',
+              label: '🎫 Support Tickets',
+              badge: summary.openSupportTicketsCount > 0 ? summary.openSupportTicketsCount : null,
+              badgeColor: 'bg-rose-500 text-white font-bold'
             },
             { id: 'users', label: '👥 Users & Free/Paid Tiers' },
             { id: 'subscriptions', label: '⚡ Activate by Email' },
@@ -598,6 +646,35 @@ export default function AdminDashboard({ admin }: Props) {
                     </div>
                   </div>
                 </div>
+
+                {/* 10. Support Tickets */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-4 hover:border-slate-700 transition-all shadow-md">
+                  <div className="flex items-center justify-between">
+                    <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                      <HelpCircle className="w-5 h-5" />
+                    </div>
+                    <button
+                      onClick={() => setDetailModal('tickets')}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1 rounded-lg border border-rose-500/20 transition-colors cursor-pointer"
+                    >
+                      <span>View Details</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl sm:text-3xl font-black text-white">{summary.supportTicketsCount || 0}</span>
+                      {summary.openSupportTicketsCount > 0 && (
+                        <span className="text-xs font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                          {summary.openSupportTicketsCount} Open
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs font-medium text-slate-400 mt-1">
+                      User Support & Help Desk Tickets
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -837,6 +914,125 @@ export default function AdminDashboard({ admin }: Props) {
                                 <span>Activate Access</span>
                               </button>
                             )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2.5: SUPPORT TICKETS & HELP DESK */}
+        {activeTab === 'tickets' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-rose-400" />
+                  <span>Support Tickets & User Inquiries</span>
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  Manage incoming customer questions, connection troubleshooting, and bug reports.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search tickets..."
+                    className="pl-9 pr-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white placeholder:text-slate-600 outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-xl">
+              {filteredTickets.length === 0 ? (
+                <div className="p-12 text-center text-slate-500 text-sm">
+                  No support tickets found.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider text-[10px] border-b border-slate-800">
+                      <tr>
+                        <th className="py-3 px-4">User / Email</th>
+                        <th className="py-3 px-4">Category</th>
+                        <th className="py-3 px-4">Subject & Message</th>
+                        <th className="py-3 px-4">Date Submitted</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      {filteredTickets.map((t) => (
+                        <tr key={t.id} className="hover:bg-slate-800/40 transition-colors">
+                          <td className="py-3.5 px-4 font-medium text-white">
+                            <div className="flex flex-col">
+                              <span>{t.email}</span>
+                              {t.name && <span className="text-[11px] text-slate-400">{t.name}</span>}
+                              {t.siteUrl && <span className="text-[10px] font-mono text-sky-400 mt-0.5">{t.siteUrl}</span>}
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">
+                              {t.category ? t.category.replace(/_/g, ' ') : 'General'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-300 max-w-sm">
+                            <div className="flex flex-col gap-1">
+                              <span className="font-semibold text-white">{t.subject}</span>
+                              <p className="text-[11px] text-slate-400 line-clamp-2">{t.message}</p>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-300 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5 text-slate-400">
+                              <Clock className="w-3.5 h-3.5 text-slate-500" />
+                              <span>{new Date(t.createdAt).toLocaleString()}</span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <select
+                              value={t.status}
+                              onChange={(e) => handleUpdateTicketStatus(t.id, e.target.value)}
+                              className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border outline-none cursor-pointer ${
+                                t.status === 'resolved'
+                                  ? 'bg-emerald-950 border-emerald-500/40 text-emerald-400'
+                                  : t.status === 'in_progress'
+                                  ? 'bg-sky-950 border-sky-500/40 text-sky-400'
+                                  : t.status === 'closed'
+                                  ? 'bg-slate-800 border-slate-700 text-slate-400'
+                                  : 'bg-rose-950 border-rose-500/40 text-rose-400'
+                              }`}
+                            >
+                              <option value="open" className="bg-slate-900 text-white">Open</option>
+                              <option value="in_progress" className="bg-slate-900 text-white">In Progress</option>
+                              <option value="resolved" className="bg-slate-900 text-white">Resolved</option>
+                              <option value="closed" className="bg-slate-900 text-white">Closed</option>
+                            </select>
+                          </td>
+                          <td className="py-3.5 px-4 text-right space-x-2">
+                            <a
+                              href={`mailto:${t.email}?subject=Re: [Ticket #${t.id.slice(0, 6)}] ${t.subject}&body=Hi ${t.name || 'there'},%0D%0A%0D%0AThank you for reaching out to DecayFix support regarding:%0D%0A"${t.subject}"%0D%0A%0D%0A`}
+                              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1"
+                            >
+                              <Mail className="w-3 h-3" />
+                              <span>Reply Email</span>
+                            </a>
+                            <button
+                              onClick={() => handleDeleteTicket(t.id)}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors"
+                              title="Delete Ticket"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -1502,12 +1698,46 @@ export default function AdminDashboard({ admin }: Props) {
                   </div>
                 </div>
               )}
+
+              {detailModal === 'tickets' && (
+                <div>
+                  <p className="text-slate-400 mb-3">Total Support Tickets: {supportTickets.length} ({summary.openSupportTicketsCount || 0} Open)</p>
+                  <table className="w-full text-left">
+                    <thead className="bg-slate-950 text-slate-400 uppercase text-[10px]">
+                      <tr>
+                        <th className="p-2">User / Email</th>
+                        <th className="p-2">Category</th>
+                        <th className="p-2">Subject</th>
+                        <th className="p-2">Status</th>
+                        <th className="p-2">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                      {supportTickets.map((t) => (
+                        <tr key={t.id}>
+                          <td className="p-2 font-mono text-white">{t.email}</td>
+                          <td className="p-2 capitalize text-slate-300">{t.category?.replace(/_/g, ' ')}</td>
+                          <td className="p-2 text-slate-200">{t.subject}</td>
+                          <td className="p-2">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                              t.status === 'resolved' ? 'bg-emerald-950 text-emerald-400' : 'bg-rose-950 text-rose-400'
+                            }`}>
+                              {t.status}
+                            </span>
+                          </td>
+                          <td className="p-2 text-slate-400">{new Date(t.createdAt).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             <div className="pt-3 border-t border-slate-800 text-right">
               <button
                 onClick={() => setDetailModal(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs"
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs cursor-pointer"
               >
                 Close Drilldown
               </button>

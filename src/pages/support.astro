@@ -1,0 +1,199 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SupportModal from '@/components/common/SupportModal';
+import { getSession } from '@/lib/session';
+
+export const prerender = false;
+
+const session = await getSession(Astro.request);
+const user = session?.user;
+---
+
+<BaseLayout
+  title="Help Desk & Support Ticket — DecayFix"
+  description="Submit a support ticket or request assistance with Google Search Console connection, decay calculations, or AI action plans."
+>
+  <div class="max-w-2xl mx-auto px-4 sm:px-6 py-16">
+    <div class="text-center max-w-xl mx-auto mb-10">
+      <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mx-auto mb-4 font-black text-xl">
+        🎫
+      </div>
+      <h1 class="text-3xl font-extrabold text-white mb-2 tracking-tight">
+        Submit a Support Ticket
+      </h1>
+      <p class="text-slate-400 text-sm">
+        Our engineering and SEO team will review your inquiry and get back to you within 24 hours.
+      </p>
+    </div>
+
+    {/* Form Container */}
+    <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+      <form id="support-page-form" class="space-y-4 text-xs">
+        <div id="form-feedback" class="hidden p-3 rounded-xl"></div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">
+              Your Email Address: <span class="text-rose-400">*</span>
+            </label>
+            <input
+              type="email"
+              id="ticket-email"
+              required
+              value={user?.email || ''}
+              placeholder="you@domain.com"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 text-white text-xs outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">
+              Your Name (Optional):
+            </label>
+            <input
+              type="text"
+              id="ticket-name"
+              value={user?.name || ''}
+              placeholder="Your Name"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 text-white text-xs outline-none"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">
+              Issue Category:
+            </label>
+            <select
+              id="ticket-category"
+              class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 text-white text-xs outline-none cursor-pointer"
+            >
+              <option value="gsc_issue">Search Console Connection</option>
+              <option value="data_accuracy">Data / Decay Metric Question</option>
+              <option value="billing">Payment & Lifetime Unlock</option>
+              <option value="ai_playbook">AI Action Plan Assistance</option>
+              <option value="feature_request">Feature Request</option>
+              <option value="general">General Support</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">
+              Site Domain (Optional):
+            </label>
+            <input
+              type="text"
+              id="ticket-site"
+              placeholder="e.g. godamwala.com"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 text-white text-xs outline-none"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">
+            Subject: <span class="text-rose-400">*</span>
+          </label>
+          <input
+            type="text"
+            id="ticket-subject"
+            required
+            placeholder="Brief summary of your question or issue"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 text-white text-xs outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">
+            Message Details: <span class="text-rose-400">*</span>
+          </label>
+          <textarea
+            id="ticket-message"
+            required
+            rows="5"
+            placeholder="Please provide any relevant details, URLs, or error messages so our team can resolve it quickly..."
+            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 text-white text-xs outline-none resize-none"
+          ></textarea>
+        </div>
+
+        <button
+          type="submit"
+          id="submit-btn"
+          class="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+        >
+          Submit Support Ticket
+        </button>
+      </form>
+
+      {/* Success Container */}
+      <div id="ticket-success" class="hidden space-y-4 text-center py-4">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold mx-auto text-xl">
+          ✓
+        </div>
+        <h3 class="text-lg font-bold text-white">Support Ticket Submitted!</h3>
+        <p id="success-msg-text" class="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+          Thanks for reaching out! Our team has received your ticket and will respond via email within 24 hours.
+        </p>
+        <div class="pt-4">
+          <a
+            href="/"
+            class="inline-block py-2 px-6 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-colors"
+          >
+            Back to Home
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('support-page-form') as HTMLFormElement | null;
+    const feedback = document.getElementById('form-feedback');
+    const submitBtn = document.getElementById('submit-btn');
+    const successBox = document.getElementById('ticket-success');
+
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = (document.getElementById('ticket-email') as HTMLInputElement)?.value;
+        const name = (document.getElementById('ticket-name') as HTMLInputElement)?.value;
+        const category = (document.getElementById('ticket-category') as HTMLSelectElement)?.value;
+        const siteUrl = (document.getElementById('ticket-site') as HTMLInputElement)?.value;
+        const subject = (document.getElementById('ticket-subject') as HTMLInputElement)?.value;
+        const message = (document.getElementById('ticket-message') as HTMLTextAreaElement)?.value;
+
+        if (submitBtn) {
+          submitBtn.setAttribute('disabled', 'true');
+          submitBtn.textContent = 'Submitting Ticket...';
+        }
+        if (feedback) {
+          feedback.className = 'hidden';
+        }
+
+        try {
+          const res = await fetch('/api/support/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, name, category, siteUrl, subject, message }),
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Failed to submit ticket');
+
+          form.classList.add('hidden');
+          if (successBox) successBox.classList.remove('hidden');
+        } catch (err: any) {
+          if (feedback) {
+            feedback.className = 'p-3 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-300 text-xs';
+            feedback.textContent = err.message || 'Something went wrong';
+          }
+          if (submitBtn) {
+            submitBtn.removeAttribute('disabled');
+            submitBtn.textContent = 'Submit Support Ticket';
+          }
+        }
+      });
+    }
+  </script>
+</BaseLayout>

@@ -204,7 +204,7 @@ export const analyticsEvents = pgTable('analyticsEvents', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  eventType: text('eventType').notNull(), // 'page_view', 'user_login', 'site_analyze', 'api_hit', 'ai_suggestion_copy', 'unlock_button_click', 'subscription_request'
+  eventType: text('eventType').notNull(), // 'page_view', 'user_login', 'site_analyze', 'api_hit', 'ai_suggestion_copy', 'unlock_button_click', 'subscription_request', 'support_ticket'
   userId: text('userId').references(() => users.id, { onDelete: 'set null' }),
   userEmail: text('userEmail'),
   path: text('path'),
@@ -213,4 +213,25 @@ export const analyticsEvents = pgTable('analyticsEvents', {
   metadata: text('metadata'), // JSON string with specific payload
   createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
 });
+
+/**
+ * User Support Tickets & Inquiries
+ */
+export const supportTickets = pgTable('supportTickets', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text('userId').references(() => users.id, { onDelete: 'set null' }),
+  email: text('email').notNull(),
+  name: text('name'),
+  subject: text('subject').notNull(),
+  category: text('category').default('general').notNull(), // 'gsc_issue', 'billing', 'data_accuracy', 'feature_request', 'other'
+  siteUrl: text('siteUrl'),
+  message: text('message').notNull(),
+  status: text('status').default('open').notNull(), // 'open', 'in_progress', 'resolved', 'closed'
+  adminNotes: text('adminNotes'),
+  createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).defaultNow().notNull(),
+});
+
 

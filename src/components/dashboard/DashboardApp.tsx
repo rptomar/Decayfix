@@ -135,10 +135,37 @@ export default function DashboardApp({
   const [digestEmail, setDigestEmail] = useState(user.email || '');
   const [digestEnabled, setDigestEnabled] = useState(true);
   const [digestSaved, setDigestSaved] = useState(false);
-  const [isAiStopped, setIsAiStopped] = useState(false);
+  const [isAiStopped, setIsAiStopped] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return sessionStorage.getItem(`decayfix_ai_paused_${user.id || 'current'}`) === 'true';
+      } catch {}
+    }
+    return false;
+  });
 
   const isCookingRef = useRef(false);
-  const stopAiRef = useRef(false);
+  const stopAiRef = useRef(
+    typeof window !== 'undefined'
+      ? sessionStorage.getItem(`decayfix_ai_paused_${user.id || 'current'}`) === 'true'
+      : false
+  );
+
+  const handleStopAi = () => {
+    setIsAiStopped(true);
+    stopAiRef.current = true;
+    try {
+      sessionStorage.setItem(`decayfix_ai_paused_${user.id || 'current'}`, 'true');
+    } catch {}
+  };
+
+  const handleResumeAi = () => {
+    setIsAiStopped(false);
+    stopAiRef.current = false;
+    try {
+      sessionStorage.setItem(`decayfix_ai_paused_${user.id || 'current'}`, 'false');
+    } catch {}
+  };
 
   const handleCopyPrompt = (page: PageItem) => {
     const topQ = page.topQueries?.[0];
@@ -394,6 +421,9 @@ Please provide:
     setErrorMsg(null);
     setIsAiStopped(false);
     stopAiRef.current = false;
+    try {
+      sessionStorage.setItem(`decayfix_ai_paused_${user.id || 'current'}`, 'false');
+    } catch {}
 
     try {
       const res = await fetch('/api/analyze', {
@@ -812,10 +842,7 @@ Please provide:
                       {isGeneratingAi && !isPaused && (
                         <button
                           type="button"
-                          onClick={() => {
-                            setIsAiStopped(true);
-                            stopAiRef.current = true;
-                          }}
+                          onClick={handleStopAi}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold transition-colors cursor-pointer"
                           title="Stop generating AI action plans"
                         >
@@ -827,10 +854,7 @@ Please provide:
                       {isPaused && (
                         <button
                           type="button"
-                          onClick={() => {
-                            setIsAiStopped(false);
-                            stopAiRef.current = false;
-                          }}
+                          onClick={handleResumeAi}
                           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
                           title="Resume generating remaining AI action plans"
                         >

@@ -2,6 +2,7 @@ import { db, analyticsEvents, users, sites, pages, purchases, subscriptionReques
 import { eq, desc, and, gte, count, sql as drizzleSql } from 'drizzle-orm';
 import crypto from 'node:crypto';
 import { getAllSubscriptionRequests } from '@/lib/subscriptionRequests';
+import { getAllSupportTickets } from '@/lib/supportTickets';
 
 export type EventType =
   | 'page_view'
@@ -10,7 +11,8 @@ export type EventType =
   | 'api_hit'
   | 'ai_suggestion_copy'
   | 'unlock_button_click'
-  | 'subscription_request';
+  | 'subscription_request'
+  | 'support_ticket';
 
 export interface TrackEventParams {
   eventType: EventType;
@@ -231,6 +233,7 @@ export async function getAdminAnalyticsOverview(timeRange: 'today' | '7d' | '30d
   let allSites: any[] = [];
   let allPurchases: any[] = [];
   let allRequests: any[] = [];
+  let allTickets: any[] = [];
 
   if (db) {
     try {
@@ -267,6 +270,13 @@ export async function getAdminAnalyticsOverview(timeRange: 'today' | '7d' | '30d
     allRequests = await getAllSubscriptionRequests();
   } catch (e) {
     console.warn('[Analytics] Subscription requests manager fetch warning:', e);
+  }
+
+  // Load support tickets reliably from manager (DB + memory)
+  try {
+    allTickets = await getAllSupportTickets();
+  } catch (e) {
+    console.warn('[Analytics] Support tickets manager fetch warning:', e);
   }
 
   // Merge in-memory fallback events if DB returned empty
@@ -361,6 +371,9 @@ export async function getAdminAnalyticsOverview(timeRange: 'today' | '7d' | '30d
   // Metric 9: Subscription Requests
   const pendingRequests = allRequests.filter((r) => r.status === 'pending');
 
+  // Metric 10: Support Tickets
+  const openTickets = allTickets.filter((t) => t.status === 'open');
+
   return {
     timeRange,
     summary: {
@@ -378,6 +391,8 @@ export async function getAdminAnalyticsOverview(timeRange: 'today' | '7d' | '30d
       unlockClicksBySource,
       subscriptionRequestsCount: allRequests.length,
       pendingSubscriptionRequestsCount: pendingRequests.length,
+      supportTicketsCount: allTickets.length,
+      openSupportTicketsCount: openTickets.length,
       totalRevenueInr,
       totalPurchasesCount: allPurchases.length,
     },
@@ -386,5 +401,6 @@ export async function getAdminAnalyticsOverview(timeRange: 'today' | '7d' | '30d
     allSites,
     allPurchases,
     subscriptionRequests: allRequests,
+    supportTickets: allTickets,
   };
 }
