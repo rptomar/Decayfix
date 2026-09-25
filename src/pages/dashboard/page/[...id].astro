@@ -1,0 +1,144 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageDetail from '@/components/dashboard/PageDetail';
+import { getSession } from '@/lib/session';
+import { db, pages, sites } from '@/db';
+import { eq, and, desc, or } from 'drizzle-orm';
+import { checkSiteUnlockStatus } from '@/lib/entitlement';
+import { extractTitleFromUrl } from '@/lib/analyzer';
+import { FREE_PREVIEW_DETAIL_LIMIT } from '@/lib/constants';
+
+export const prerender = false;
+
+const session = await getSession(Astro.request);
+if (!session?.user?.id) {
+  return Astro.redirect('/login');
+}
+
+const userId = session.user.id;
+const { id } = Astro.params;
+const queryUrl = Astro.url.searchParams.get('url');
+
+let rawTargetUrl = queryUrl || id || '';
+let targetUrl = '';
+
+if (rawTargetUrl) {
+  try {
+    targetUrl = decodeURIComponent(rawTargetUrl);
+  } catch {
+    targetUrl = rawTargetUrl;
+  }
+}
+
+if (!targetUrl) {
+  return Astro.redirect('/dashboard');
+}
+
+// Check entitlement
+const entitlement = await checkSiteUnlockStatus(userId);
+
+let pageData: any = {
+  url: targetUrl,
+  title: extractTitleFromUrl(targetUrl),
+  baselineClicks: 0,
+  baselineImpressions: 0,
+  recentClicks: 0,
+  recentImpressions: 0,
+  clicksLost: 0,
+  dropPercentClicks: 0,
+  dropPercentImpressions: 0,
+  severityScore: 0,
+  aiSuggestion: null,
+  topQueries: [],
+  isFlagged: false,
+  isLocked: false,
+  isFreeDemo: false,
+};
+
+if (db) {
+  try {
+    const canonUrl = targetUrl.replace(/\/$/, '');
+    const slashUrl = `${canonUrl}/`;
+
+    // Find page in DB matching exact URL, stripped slash, or added slash
+    const found = await db
+      .select()
+      .from(pages)
+      .where(or(eq(pages.url, targetUrl), eq(pages.url, canonUrl), eq(pages.url, slashUrl)))
+      .limit(1);
+
+    if (found.length > 0) {
+      const p = found[0];
+      // Get rank order among flagged pages for this site
+      const allFlagged = await db
+        .select()
+        .from(pages)
+        .where(and(eq(pages.siteId, p.siteId), eq(pages.isFlagged, true)))
+        .orderBy(desc(pages.severityScore));
+
+      const pageIndex = allFlagged.findIndex((item) => item.id === p.id);
+      // Top #1 page (pageIndex === 0) is fully unlocked as a live demo!
+      const isLocked = !entitlement.isUnlocked && (pageIndex === -1 ? true : pageIndex >= FREE_PREVIEW_DETAIL_LIMIT);
+
+      let topQueries = [];
+      if (p.topQueries) {
+        try {
+          topQueries = JSON.parse(p.topQueries);
+        } catch {}
+      }
+
+      let aiPlan = p.aiSuggestion;
+      if (!isLocked && (!aiPlan || aiPlan.trim() === '')) {
+        const { generateContentSuggestion } = await import('@/lib/ai');
+        aiPlan = await generateContentSuggestion({
+          url: p.url,
+          title: p.title || extractTitleFromUrl(p.url),
+          baselineClicks: p.baselineClicks,
+          recentClicks: p.recentClicks,
+          dropPercentClicks: Number(p.dropPercentClicks),
+          dropPercentImpressions: Number(p.dropPercentImpressions),
+          clicksLost: p.clicksLost || Math.max(0, p.baselineClicks - p.recentClicks),
+          topQueries,
+        });
+
+        try {
+          await db.update(pages).set({ aiSuggestion: aiPlan }).where(eq(pages.id, p.id));
+        } catch {}
+      }
+
+      pageData = {
+        url: p.url,
+        title: p.title || extractTitleFromUrl(p.url),
+        baselineClicks: p.baselineClicks,
+        baselineImpressions: p.baselineImpressions,
+        recentClicks: p.recentClicks,
+        recentImpressions: p.recentImpressions,
+        clicksLost: p.clicksLost || Math.max(0, p.baselineClicks - p.recentClicks),
+        dropPercentClicks: Number(p.dropPercentClicks),
+        dropPercentImpressions: Number(p.dropPercentImpressions),
+        severityScore: Number(p.severityScore),
+        aiSuggestion: isLocked ? null : aiPlan,
+        topQueries: isLocked ? [] : topQueries,
+        isFlagged: p.isFlagged,
+        isLocked,
+        isFreeDemo: !entitlement.isUnlocked && pageIndex === 0,
+      };
+    }
+  } catch (err) {
+    console.error('Error fetching page detail:', err);
+  }
+}
+
+const razorpayKeyId = process.env.PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID || 'rzp_test_dummy';
+---
+
+<BaseLayout title={`${pageData.title} — Decay Analysis`} noIndex={true}>
+  <PageDetail
+    client:load
+    pageData={pageData}
+    isUnlocked={entitlement.isUnlocked}
+    razorpayKeyId={razorpayKeyId}
+    userEmail={session.user.email}
+    userName={session.user.name}
+  />
+</BaseLayout>

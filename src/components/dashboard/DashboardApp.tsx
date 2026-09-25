@@ -1033,7 +1033,7 @@ Please provide:
 
                                 {!isLockedItem || index === 0 ? (
                                   <a
-                                    href={`/dashboard/page/${encodeURIComponent(page.url)}`}
+                                    href={`/dashboard/page?url=${encodeURIComponent(page.url)}`}
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 transition-colors"
                                   >
                                     <span>{index === 0 && isLockedItem ? 'Free Demo View' : 'View Detail'}</span>
