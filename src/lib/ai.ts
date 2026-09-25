@@ -78,7 +78,35 @@ Give concrete advice tailored to the exact topic and query intent. Do NOT output
     console.warn('[DecayFix AI] No valid GEMINI_API_KEY found in environment. Using dynamic heuristic engine.');
   }
 
-  // 2. Groq Cloud API
+  // 2. OpenAI API
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (openaiKey && !openaiKey.startsWith('dummy_') && openaiKey.trim() !== '') {
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${openaiKey.trim()}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 300,
+          temperature: 0.4,
+        }),
+        signal: AbortSignal.timeout(6000),
+      });
+      const data = await response.json();
+      const text = data?.choices?.[0]?.message?.content;
+      if (text && text.trim().length > 0) {
+        return text.trim();
+      }
+    } catch (err: any) {
+      console.warn('OpenAI API error:', err?.message || err);
+    }
+  }
+
+  // 3. Groq Cloud API
   const groqKey = process.env.GROQ_API_KEY;
   if (groqKey && !groqKey.startsWith('dummy_') && groqKey.trim() !== '') {
     try {
@@ -106,7 +134,7 @@ Give concrete advice tailored to the exact topic and query intent. Do NOT output
     }
   }
 
-  // 3. Anthropic Claude API
+  // 4. Anthropic Claude API
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey && anthropicKey.startsWith('sk-ant-')) {
     try {
