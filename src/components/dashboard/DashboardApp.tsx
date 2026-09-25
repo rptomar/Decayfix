@@ -143,6 +143,7 @@ export default function DashboardApp({
     }
     return false;
   });
+  const [aiTrigger, setAiTrigger] = useState(0);
 
   const isCookingRef = useRef(false);
   const stopAiRef = useRef(
@@ -162,6 +163,8 @@ export default function DashboardApp({
   const handleResumeAi = () => {
     setIsAiStopped(false);
     stopAiRef.current = false;
+    isCookingRef.current = false;
+    setAiTrigger((c) => c + 1);
     try {
       sessionStorage.setItem(`decayfix_ai_paused_${user.id || 'current'}`, 'false');
     } catch {}
@@ -373,18 +376,28 @@ Please provide:
     };
 
     fetchSingleSuggestion();
-  }, [analysisResults, hasRunAnalysis, analyzing, selectedSiteUrl, customSiteInput, user.id, totalFlagged, totalClicksLost, recoveredCount, healthScore, healthGrade, healthLabel, healthColor, lockedCount, isUnlocked]);
+  }, [
+    analysisResults,
+    hasRunAnalysis,
+    analyzing,
+    isAiStopped,
+    aiTrigger,
+    selectedSiteUrl,
+    customSiteInput,
+    user.id,
+    totalFlagged,
+    totalClicksLost,
+    recoveredCount,
+    healthScore,
+    healthGrade,
+    healthLabel,
+    healthColor,
+    lockedCount,
+    isUnlocked,
+  ]);
 
-  // Load Razorpay Checkout script dynamically & fetch live GSC properties
+  // Fetch live GSC properties on mount
   useEffect(() => {
-    if (!document.getElementById('razorpay-checkout-script')) {
-      const script = document.createElement('script');
-      script.id = 'razorpay-checkout-script';
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-
     const fetchGscProperties = async () => {
       try {
         const res = await fetch('/api/sites');
@@ -421,6 +434,8 @@ Please provide:
     setErrorMsg(null);
     setIsAiStopped(false);
     stopAiRef.current = false;
+    isCookingRef.current = false;
+    setAiTrigger((c) => c + 1);
     try {
       sessionStorage.setItem(`decayfix_ai_paused_${user.id || 'current'}`, 'false');
     } catch {}
