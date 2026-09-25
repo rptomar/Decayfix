@@ -14,7 +14,7 @@ export const POST: APIRoute = async ({ request }) => {
     let userName = (body.name as string)?.trim() || session?.user?.name || 'Customer';
     const siteUrl = (body.siteUrl as string)?.trim() || undefined;
     const source = (body.source as string)?.trim() || 'dashboard_banner';
-    const plan = (body.plan as string)?.trim() || 'Full Site Report Unlock (₹999)';
+    const plan = (body.plan as string)?.trim() || 'Pro Monthly Subscription (₹999/mo)';
     const userId = session?.user?.id || null;
 
     if (!userEmail || !userEmail.includes('@')) {

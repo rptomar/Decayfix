@@ -16,8 +16,9 @@ export const FREE_TIER_PAGE_LIMIT = 5;
 // Free tier: number of full detail pages unlocked as a live demo (top #1 page)
 export const FREE_PREVIEW_DETAIL_LIMIT = 1;
 
-// Default one-time unlock price in INR (e.g., INR 999 = ~$12 USD)
+// Default Pro Monthly subscription price in INR (e.g., INR 999/month = ~$12 USD/month)
 export const DEFAULT_PRICE_INR = 999;
+export const DEFAULT_PLAN_NAME = 'Pro Monthly Subscription (₹999/mo)';
 
 // Google Search Console data lag buffer in days (GSC data is typically delayed by 2-3 days)
 export const GSC_LAG_BUFFER_DAYS = 3;

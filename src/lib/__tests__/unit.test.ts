@@ -221,7 +221,7 @@ async function runTests() {
     userName: 'Interested Client',
     siteUrl: 'https://example.com',
     source: 'modal_submit',
-    plan: 'Full Site Report Unlock (₹999)',
+    plan: 'Pro Monthly Subscription (₹999/mo)',
   });
   console.assert(createdReq.id.length > 0, 'Subscription request must generate an ID');
   console.assert(createdReq.email === 'client_interested@example.com', 'Subscription request email must match');

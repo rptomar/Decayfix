@@ -17,14 +17,14 @@ if (user?.id || user?.email) {
 ---
 
 <BaseLayout
-  title="Pricing — Transparent, No-Subscription Report"
-  description="DecayFix pricing: Free preview for your top 5 decaying blog posts, or one-time payment to permanently unlock all decaying URLs and Claude AI recommendations."
+  title="Pricing — Simple, Predictable Monthly Subscription"
+  description="DecayFix pricing: Free preview for your top 5 decaying blog posts, or ₹999/month Pro subscription to continuously monitor all decaying URLs and Claude AI recommendations."
 >
   <div class="max-w-4xl mx-auto px-4 sm:px-6 py-20">
     <div class="text-center max-w-2xl mx-auto mb-16">
-      <h1 class="text-4xl font-extrabold text-white mb-4">Transparent Pricing for Bloggers</h1>
+      <h1 class="text-4xl font-extrabold text-white mb-4">Transparent Pricing for Content Teams</h1>
       <p class="text-slate-300 text-lg">
-        No monthly recurring bills. Pay once when you need a comprehensive content refresh audit.
+        Keep your blog ranking high with continuous content decay audits and AI recovery playbooks.
       </p>
     </div>
 
@@ -87,7 +87,7 @@ if (user?.id || user?.email) {
         )}
       </div>
 
-      <!-- One-time Paid Unlock -->
+      <!-- Paid Pro Subscription -->
       <div class={`rounded-2xl border-2 ${isUnlocked ? 'border-emerald-500/80 bg-slate-900/95 shadow-emerald-500/10' : 'border-indigo-500 bg-slate-900 shadow-indigo-500/10'} p-8 flex flex-col justify-between relative shadow-xl`}>
         {isUnlocked ? (
           <div class="absolute -top-3.5 right-6 px-3.5 py-1 bg-emerald-500 text-white text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1 shadow-lg shadow-emerald-500/20">
@@ -95,29 +95,29 @@ if (user?.id || user?.email) {
           </div>
         ) : (
           <div class="absolute -top-3 right-6 px-3 py-0.5 bg-indigo-500 text-white text-xs font-bold rounded-full uppercase tracking-wider">
-            Best Value
+            Pro Monthly
           </div>
         )}
 
         <div>
           <div class="flex items-center justify-between mb-2">
             <span class={`text-xs font-semibold ${isUnlocked ? 'text-emerald-400' : 'text-indigo-400'} uppercase tracking-wider`}>
-              Full Site Report
+              Pro Monthly Plan
             </span>
           </div>
 
           <div class="flex items-baseline gap-2 mb-2">
             <span class="text-4xl font-black text-white">₹999</span>
-            <span class="text-xs text-slate-400">one-time / site</span>
+            <span class="text-xs text-slate-400">/ month</span>
           </div>
           <div class={`text-xs ${isUnlocked ? 'text-emerald-300' : 'text-indigo-300'} mb-6`}>
-            Lifetime access for this website
+            Monthly subscription • Cancel anytime
           </div>
 
           {isUnlocked && (
             <div class="p-3.5 rounded-xl bg-emerald-950/70 border border-emerald-500/40 text-emerald-200 text-xs flex items-center gap-2.5 mb-6 font-medium">
               <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold shrink-0">✓</span>
-              <span>Your account has Full Lifetime Unlock activated. All posts and AI action plans are permanently unlocked.</span>
+              <span>Your account has Pro Monthly Subscription activated (₹999/mo). All posts and AI action plans are fully unlocked.</span>
             </div>
           )}
 
@@ -148,7 +148,7 @@ if (user?.id || user?.email) {
             </li>
             <li class="flex items-center gap-3">
               <span class="text-emerald-400 font-bold">✓</span>
-              <span>Unlimited manual re-analyses anytime</span>
+              <span>Continuous monitoring & unlimited re-analyses</span>
             </li>
             <li class="flex items-center gap-3">
               <span class="text-emerald-400 font-bold">✓</span>
@@ -172,14 +172,14 @@ if (user?.id || user?.email) {
             href="/dashboard"
             class="mt-8 block text-center py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-md shadow-indigo-600/30 transition-all hover:scale-[1.02]"
           >
-            Upgrade in Dashboard • ₹999
+            Upgrade in Dashboard • ₹999/mo
           </a>
         ) : (
           <a
             href="/login"
             class="mt-8 block text-center py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-md shadow-indigo-600/30 transition-all hover:scale-[1.02]"
           >
-            Get Full Site Unlock • ₹999
+            Get Pro Monthly • ₹999/mo
           </a>
         )}
 
@@ -194,9 +194,9 @@ if (user?.id || user?.email) {
       <h2 class="text-2xl font-bold text-white mb-8 text-center">Frequently Asked Questions</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
         <div class="p-6 rounded-xl border border-slate-800 bg-slate-900/50">
-          <h3 class="font-semibold text-white mb-2">Is this a recurring subscription?</h3>
+          <h3 class="font-semibold text-white mb-2">How does the monthly subscription work?</h3>
           <p class="text-slate-400 leading-relaxed">
-            No! DecayFix v1 is strictly a one-time purchase per site report. You will never be billed automatically on a recurring monthly or annual basis.
+            DecayFix Pro is a ₹999/month subscription. You get ongoing continuous monitoring of all decaying pages, automated weekly health checks, query drop alerts, and unlimited AI refresh playbooks. You can cancel anytime with a single click.
           </p>
         </div>
         <div class="p-6 rounded-xl border border-slate-800 bg-slate-900/50">

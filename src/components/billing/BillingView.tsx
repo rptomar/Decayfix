@@ -78,14 +78,14 @@ export default function BillingView({
           Billing & Access Status
         </h1>
         <p className="text-sm text-slate-400 mt-1">
-          Manage your one-time site unlock passes and view payment receipts.
+          Manage your monthly subscription and view billing receipts.
         </p>
       </div>
 
       {successNotice && (
         <div className="p-4 rounded-xl bg-emerald-950/80 border border-emerald-500/50 text-emerald-200 text-sm flex items-center gap-3">
           <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-          <span>Payment successful! Your full content decay report is unlocked.</span>
+          <span>Subscription active! Your full content decay report is unlocked.</span>
         </div>
       )}
 
@@ -98,7 +98,7 @@ export default function BillingView({
               {isUnlocked ? (
                 <>
                   <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                  <span className="text-emerald-400">Full Site Report Unlocked</span>
+                  <span className="text-emerald-400">Pro Monthly Plan Active (₹999/mo)</span>
                 </>
               ) : (
                 <>
@@ -116,13 +116,13 @@ export default function BillingView({
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-md transition-all hover:scale-105 cursor-pointer"
             >
               <CreditCard className="w-4 h-4" />
-              <span>{paymentLoading ? 'Processing...' : 'Unlock Full Report (₹999)'}</span>
+              <span>{paymentLoading ? 'Processing...' : 'Subscribe to Pro (₹999/mo)'}</span>
             </button>
           )}
         </div>
 
         <div className="pt-4 border-t border-slate-800 text-xs text-slate-400 space-y-1">
-          <p>• One-time payment. No recurring monthly or annual charges.</p>
+          <p>• ₹999 billed monthly. Cancel anytime.</p>
           <p>• Unlocks 100% of decaying posts, full traffic history, and all Claude AI suggestions.</p>
         </div>
       </div>
@@ -145,7 +145,7 @@ export default function BillingView({
               <div key={item.id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="font-semibold text-white text-sm">
-                    DecayFix Full Site Report Unlock
+                    DecayFix Pro Monthly Subscription
                   </div>
                   <div className="text-xs text-slate-400 flex items-center gap-2">
                     <span>Payment ID: <code className="text-slate-300 font-mono">{item.razorpayPaymentId || item.id}</code></span>

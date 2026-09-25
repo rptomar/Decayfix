@@ -188,7 +188,7 @@ export const subscriptionRequests = pgTable('subscriptionRequests', {
   email: text('email').notNull(),
   userName: text('userName'),
   siteUrl: text('siteUrl'),
-  plan: text('plan').default('Full Site Report Unlock (₹999)').notNull(),
+  plan: text('plan').default('Pro Monthly Subscription (₹999/mo)').notNull(),
   amount: integer('amount').default(99900).notNull(), // in paise
   source: text('source').default('dashboard_banner').notNull(), // e.g. 'dashboard_banner', 'locked_card', 'page_detail', 'billing_page', 'pricing_page'
   status: text('status').default('pending').notNull(), // 'pending', 'contacted', 'activated', 'cancelled'

@@ -762,7 +762,7 @@ Please provide:
             <div className="rounded-2xl border-2 border-indigo-500/80 bg-gradient-to-r from-indigo-950/80 via-slate-900 to-indigo-950/80 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
               <div className="space-y-2 text-center sm:text-left">
                 <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold uppercase tracking-wider">
-                  <Lock className="w-3 h-3" /> One-Time Unlock
+                  <Lock className="w-3 h-3" /> Pro Monthly Subscription
                 </div>
                 <h3 className="text-xl font-bold text-white">
                   Unlock all {lockedCount} remaining decaying {lockedCount === 1 ? 'post' : 'posts'} & AI action plans
@@ -772,7 +772,7 @@ Please provide:
                 </p>
                 <div className="text-xs text-slate-400 flex items-center justify-center sm:justify-start gap-1.5 pt-1">
                   <span>🛡️</span>
-                  <span><strong>7-Day Money-Back Guarantee:</strong> 100% full refund if this audit doesn't uncover actionable wins.</span>
+                  <span><strong>7-Day Money-Back Guarantee:</strong> 100% full refund if this audit doesn't uncover actionable wins. Cancel anytime.</span>
                 </div>
               </div>
 
@@ -783,9 +783,9 @@ Please provide:
                   disabled={paymentLoading}
                   className="px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105 cursor-pointer"
                 >
-                  {paymentLoading ? 'Processing...' : 'Unlock Full Report • ₹999'}
+                  {paymentLoading ? 'Processing...' : 'Subscribe to Pro • ₹999/mo'}
                 </button>
-                <span className="text-[11px] text-slate-400">One-time payment • Lifetime report access</span>
+                <span className="text-[11px] text-slate-400">₹999 / month • Cancel anytime</span>
               </div>
             </div>
           )}

@@ -181,7 +181,7 @@ export default function SupportModal({
                   >
                     <option value="gsc_issue">Search Console Connection</option>
                     <option value="data_accuracy">Data / Decay Metric Question</option>
-                    <option value="billing">Payment & Lifetime Unlock</option>
+                    <option value="billing">Payment & Pro Monthly Subscription</option>
                     <option value="ai_playbook">AI Action Plan Inquiry</option>
                     <option value="feature_request">Feature Request</option>
                     <option value="general">General Support</option>

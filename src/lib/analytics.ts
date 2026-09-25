@@ -299,7 +299,7 @@ export async function getAdminAnalyticsOverview(timeRange: 'today' | '7d' | '30d
         email: evt.userEmail,
         userName: meta?.name || 'Customer',
         siteUrl: meta?.siteUrl || null,
-        plan: meta?.plan || 'Full Site Report Unlock (₹999)',
+        plan: meta?.plan || 'Pro Monthly Subscription (₹999/mo)',
         amount: 99900,
         source: meta?.source || 'dashboard_banner',
         status: 'pending',

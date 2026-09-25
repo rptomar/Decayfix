@@ -63,7 +63,7 @@ export default function SubscriptionRequestModal({
           name: userName,
           siteUrl,
           source,
-          plan: 'Full Site Report Unlock (₹999)',
+          plan: 'Pro Monthly Subscription (₹999/mo)',
         }),
       });
 
@@ -104,10 +104,10 @@ export default function SubscriptionRequestModal({
               </div>
               <div>
                 <h3 className="text-xl font-bold text-white tracking-tight">
-                  Unlock Full Content Decay Audit
+                  Subscribe to DecayFix Pro Monthly
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Permanent lifetime access for {siteUrl ? <code className="text-sky-400">{siteUrl}</code> : 'your website'}
+                  Monthly Pro access for {siteUrl ? <code className="text-sky-400">{siteUrl}</code> : 'your website'}
                 </p>
               </div>
             </div>
@@ -126,8 +126,8 @@ export default function SubscriptionRequestModal({
             {/* Plan inclusions */}
             <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-2.5 text-xs text-slate-300">
               <div className="font-semibold text-white flex items-center justify-between">
-                <span>What's included in Full Unlock (₹999 one-time):</span>
-                <span className="text-indigo-400 font-bold">Lifetime</span>
+                <span>What's included in Pro Monthly (₹999/mo):</span>
+                <span className="text-indigo-400 font-bold">₹999 / month</span>
               </div>
               <ul className="space-y-1.5">
                 <li className="flex items-center gap-2">
@@ -140,7 +140,11 @@ export default function SubscriptionRequestModal({
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>Full CSV report export & unlimited re-analyses</span>
+                  <span>Full CSV report export & continuous weekly monitoring</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Cancel or pause subscription anytime</span>
                 </li>
               </ul>
             </div>
@@ -155,7 +159,7 @@ export default function SubscriptionRequestModal({
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Your Contact Email for Subscription Activation:
+                  Your Contact Email for Monthly Subscription Activation:
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -182,7 +186,7 @@ export default function SubscriptionRequestModal({
                   </>
                 ) : (
                   <>
-                    <span>Submit Request for Full Unlock</span>
+                    <span>Submit Request for Pro Monthly (₹999/mo)</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}

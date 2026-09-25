@@ -182,7 +182,7 @@ Please generate a comprehensive, ready-to-publish content refresh:
             disabled={paymentLoading}
             className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105 cursor-pointer"
           >
-            {paymentLoading ? 'Processing...' : 'Unlock Full Report • ₹999'}
+            {paymentLoading ? 'Processing...' : 'Subscribe to Pro • ₹999/mo'}
           </button>
         </div>
       ) : (
@@ -203,7 +203,7 @@ Please generate a comprehensive, ready-to-publish content refresh:
                 onClick={handleUnlock}
                 className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shrink-0 shadow-md cursor-pointer"
               >
-                Unlock All Posts • ₹999
+                Subscribe to Pro • ₹999/mo
               </button>
             </div>
           )}

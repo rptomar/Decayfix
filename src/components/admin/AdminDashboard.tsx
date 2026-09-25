@@ -882,7 +882,7 @@ export default function AdminDashboard({ admin }: Props) {
                             </div>
                           </td>
                           <td className="py-3.5 px-4 text-slate-300">
-                            <span className="font-semibold text-white">₹999</span> (Lifetime Unlock)
+                            <span className="font-semibold text-white">₹999</span>/mo (Pro Monthly)
                           </td>
                           <td className="py-3.5 px-4">
                             <select

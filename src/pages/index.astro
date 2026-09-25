@@ -260,24 +260,24 @@ if (user?.id || user?.email) {
           </div>
         ) : (
           <div class="absolute -top-3.5 right-6 px-3 py-1 bg-indigo-500 text-white text-xs font-bold rounded-full uppercase tracking-wider">
-            One-Time Payment
+            Monthly Subscription
           </div>
         )}
         <div>
-          <div class={`text-sm font-semibold ${isUnlocked ? 'text-emerald-400' : 'text-indigo-400'} uppercase tracking-wider mb-2`}>Full Site Report</div>
+          <div class={`text-sm font-semibold ${isUnlocked ? 'text-emerald-400' : 'text-indigo-400'} uppercase tracking-wider mb-2`}>Pro Monthly Plan</div>
           <div class="flex items-baseline gap-2 mb-4">
             <span class="text-4xl font-extrabold text-white">₹999</span>
-            <span class="text-sm text-slate-400 font-normal">one-time / site</span>
+            <span class="text-sm text-slate-400 font-normal">/ month</span>
           </div>
 
           {isUnlocked && (
             <div class="p-3.5 rounded-xl bg-emerald-950/70 border border-emerald-500/40 text-emerald-200 text-xs flex items-center gap-2 mb-4 font-medium">
               <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold shrink-0">✓</span>
-              <span>Lifetime Pro Active: All posts & Claude AI suggestions unlocked for your account.</span>
+              <span>Pro Monthly Active: All posts & AI action plans unlocked for your account.</span>
             </div>
           )}
 
-          <p class="text-sm text-slate-400 mb-6">Permanent access to all decaying posts and AI suggestions.</p>
+          <p class="text-sm text-slate-400 mb-6">Continuous monthly access to monitor all decaying posts, traffic drops, and AI suggestions.</p>
           <ul class="space-y-3 text-sm text-slate-300">
             <li class="flex items-center gap-2">
               <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
@@ -285,15 +285,15 @@ if (user?.id || user?.email) {
             </li>
             <li class="flex items-center gap-2">
               <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-              <span>Full Claude AI suggestions for all posts</span>
+              <span>Tailored AI recovery action plans for all posts</span>
             </li>
             <li class="flex items-center gap-2">
               <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-              <span>Unlimited manual re-analyses</span>
+              <span>Ongoing monitoring & unlimited re-analyses</span>
             </li>
             <li class="flex items-center gap-2">
               <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-              <span>Email confirmation & permanent dashboard link</span>
+              <span>Cancel or pause subscription anytime</span>
             </li>
           </ul>
         </div>
@@ -312,14 +312,14 @@ if (user?.id || user?.email) {
             href="/dashboard"
             class="mt-8 block text-center py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-600/30 transition-all hover:scale-[1.02]"
           >
-            Upgrade in Dashboard • ₹999
+            Upgrade in Dashboard • ₹999/mo
           </a>
         ) : (
           <a
             href="/login"
             class="mt-8 block text-center py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-md shadow-indigo-600/30 transition-all hover:scale-[1.02]"
           >
-            Sign In & Unlock Report
+            Sign In & Subscribe • ₹999/mo
           </a>
         )}
       </div>
