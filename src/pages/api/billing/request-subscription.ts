@@ -1,8 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getSession } from '@/lib/session';
-import { db, subscriptionRequests, users } from '@/db';
 import { trackEvent } from '@/lib/analytics';
-import { eq } from 'drizzle-orm';
+import { createSubscriptionRequest } from '@/lib/subscriptionRequests';
 
 export const prerender = false;
 
@@ -26,29 +25,18 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const now = new Date();
-    const requestId = crypto.randomUUID();
 
-    // 1. Save subscription request into DB
-    if (db) {
-      try {
-        await db.insert(subscriptionRequests).values({
-          id: requestId,
-          userId: userId,
-          email: userEmail,
-          userName: userName,
-          siteUrl: siteUrl || null,
-          source: source,
-          plan: plan,
-          amount: 99900,
-          status: 'pending',
-          notes: `Automated request via ${source} at ${now.toLocaleString()}`,
-          createdAt: now,
-          updatedAt: now,
-        });
-      } catch (dbErr) {
-        console.warn('[DecayFix] Error inserting subscription request to DB:', dbErr);
-      }
-    }
+    // 1. Save subscription request (DB + persistent memory fallback)
+    const savedRequest = await createSubscriptionRequest({
+      userId,
+      email: userEmail,
+      userName,
+      siteUrl,
+      source,
+      plan,
+      amount: 99900,
+      notes: `Automated request via ${source} at ${now.toLocaleString()}`,
+    });
 
     // 2. Track analytics event
     await trackEvent({
@@ -57,7 +45,7 @@ export const POST: APIRoute = async ({ request }) => {
       userEmail: userEmail,
       path: '/api/billing/request-subscription',
       metadata: {
-        requestId,
+        requestId: savedRequest.id,
         siteUrl,
         source,
         plan,
@@ -71,7 +59,7 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(
       JSON.stringify({
         success: true,
-        requestId,
+        requestId: savedRequest.id,
         email: userEmail,
         submittedAt: now.toISOString(),
         formattedDate: now.toLocaleDateString('en-US', {

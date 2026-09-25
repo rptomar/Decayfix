@@ -214,10 +214,34 @@ async function runTests() {
   console.assert(analyticsOverview.summary.unlockButtonClicksCount >= 1, 'Analytics summary must record unlock clicks');
   console.log('✓ Test 13: Analytics event tracking & KPI compilation passed');
 
+  // Test 14: Subscription Request Creation & Admin Overview Integration
+  const { createSubscriptionRequest, getAllSubscriptionRequests, updateSubscriptionRequest } = await import('../subscriptionRequests');
+  const createdReq = await createSubscriptionRequest({
+    email: 'client_interested@example.com',
+    userName: 'Interested Client',
+    siteUrl: 'https://example.com',
+    source: 'modal_submit',
+    plan: 'Full Site Report Unlock (₹999)',
+  });
+  console.assert(createdReq.id.length > 0, 'Subscription request must generate an ID');
+  console.assert(createdReq.email === 'client_interested@example.com', 'Subscription request email must match');
+
+  const allReqs = await getAllSubscriptionRequests();
+  const foundReq = allReqs.find((r) => r.id === createdReq.id);
+  console.assert(foundReq !== undefined, 'Created request must be found in getAllSubscriptionRequests');
+
+  const updatedReqOk = await updateSubscriptionRequest(createdReq.id, { status: 'activated' });
+  console.assert(updatedReqOk === true, 'Updating subscription request status must succeed');
+
+  const adminOverviewWithReq = await getAdminAnalyticsOverview('all');
+  console.assert(adminOverviewWithReq.summary.subscriptionRequestsCount >= 1, 'Admin overview must reflect subscription requests count');
+  console.log('✓ Test 14: Subscription request creation, retrieval & admin overview integration passed');
+
   console.log('\n======================================================');
-  console.log('  All 13 core automated verification test suites passed! 🎉');
+  console.log('  All 14 core automated verification test suites passed! 🎉');
   console.log('======================================================\n');
 }
 
 runTests();
+
 

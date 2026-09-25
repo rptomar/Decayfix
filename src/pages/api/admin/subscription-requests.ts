@@ -1,8 +1,11 @@
 import type { APIRoute } from 'astro';
 import { getAdminSession } from '@/lib/adminAuth';
-import { db, subscriptionRequests } from '@/db';
-import { desc, eq } from 'drizzle-orm';
 import { activateUserSubscriptionByEmail } from '@/lib/entitlement';
+import {
+  getAllSubscriptionRequests,
+  updateSubscriptionRequest,
+  deleteSubscriptionRequestItem,
+} from '@/lib/subscriptionRequests';
 
 export const prerender = false;
 
@@ -16,14 +19,7 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   try {
-    let requests: any[] = [];
-    if (db) {
-      requests = await db
-        .select()
-        .from(subscriptionRequests)
-        .orderBy(desc(subscriptionRequests.createdAt));
-    }
-
+    const requests = await getAllSubscriptionRequests();
     return new Response(JSON.stringify({ requests, total: requests.length }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
@@ -56,27 +52,15 @@ export const PATCH: APIRoute = async ({ request }) => {
       });
     }
 
-    if (!db) {
-      return new Response(JSON.stringify({ success: true, message: 'Updated (mock)' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const all = await getAllSubscriptionRequests();
+    const reqData = all.find((r) => r.id === id);
 
-    const currentReq = await db
-      .select()
-      .from(subscriptionRequests)
-      .where(eq(subscriptionRequests.id, id))
-      .limit(1);
-
-    if (!currentReq || currentReq.length === 0) {
+    if (!reqData) {
       return new Response(JSON.stringify({ error: 'Request not found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
       });
     }
-
-    const reqData = currentReq[0];
 
     // 1-Click Approve & Activate Subscription
     if (action === 'activate') {
@@ -86,6 +70,11 @@ export const PATCH: APIRoute = async ({ request }) => {
         siteUrl: reqData.siteUrl || undefined,
         adminEmail: admin.email,
         notes: notes || 'Activated directly from Subscription Requests tab',
+      });
+
+      await updateSubscriptionRequest(id, {
+        status: 'activated',
+        notes: notes || 'Activated by Admin',
       });
 
       return new Response(
@@ -99,14 +88,10 @@ export const PATCH: APIRoute = async ({ request }) => {
     }
 
     // Status or Notes update
-    await db
-      .update(subscriptionRequests)
-      .set({
-        ...(status ? { status } : {}),
-        ...(notes !== undefined ? { notes } : {}),
-        updatedAt: new Date(),
-      })
-      .where(eq(subscriptionRequests.id, id));
+    await updateSubscriptionRequest(id, {
+      status: status || undefined,
+      notes: notes !== undefined ? notes : undefined,
+    });
 
     return new Response(
       JSON.stringify({
@@ -143,9 +128,7 @@ export const DELETE: APIRoute = async ({ request }) => {
       });
     }
 
-    if (db) {
-      await db.delete(subscriptionRequests).where(eq(subscriptionRequests.id, id));
-    }
+    await deleteSubscriptionRequestItem(id);
 
     return new Response(JSON.stringify({ success: true, message: 'Request deleted' }), {
       status: 200,

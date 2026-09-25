@@ -1,6 +1,7 @@
 import { db, analyticsEvents, users, sites, pages, purchases, subscriptionRequests } from '@/db';
 import { eq, desc, and, gte, count, sql as drizzleSql } from 'drizzle-orm';
 import crypto from 'node:crypto';
+import { getAllSubscriptionRequests } from '@/lib/subscriptionRequests';
 
 export type EventType =
   | 'page_view'
@@ -224,7 +225,7 @@ export async function getAdminAnalyticsOverview(timeRange: 'today' | '7d' | '30d
     filterDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   }
 
-  // 1. Gather all events (from DB or fallback buffer)
+  // 1. Gather all events & data independently
   let allEvents: any[] = [];
   let allUsers: any[] = [];
   let allSites: any[] = [];
@@ -238,19 +239,66 @@ export async function getAdminAnalyticsOverview(timeRange: 'today' | '7d' | '30d
         .from(analyticsEvents)
         .orderBy(desc(analyticsEvents.createdAt))
         .limit(3000);
-
-      allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
-      allSites = await db.select().from(sites).orderBy(desc(sites.connectedAt));
-      allPurchases = await db.select().from(purchases).orderBy(desc(purchases.unlockedAt));
-      allRequests = await db.select().from(subscriptionRequests).orderBy(desc(subscriptionRequests.createdAt));
-    } catch (err) {
-      console.warn('[Analytics] DB Query error, falling back to in-memory:', err);
+    } catch (e) {
+      console.warn('[Analytics] DB events query warning:', e);
     }
+
+    try {
+      allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+    } catch (e) {
+      console.warn('[Analytics] DB users query warning:', e);
+    }
+
+    try {
+      allSites = await db.select().from(sites).orderBy(desc(sites.connectedAt));
+    } catch (e) {
+      console.warn('[Analytics] DB sites query warning:', e);
+    }
+
+    try {
+      allPurchases = await db.select().from(purchases).orderBy(desc(purchases.unlockedAt));
+    } catch (e) {
+      console.warn('[Analytics] DB purchases query warning:', e);
+    }
+  }
+
+  // Load subscription requests reliably from manager (DB + memory)
+  try {
+    allRequests = await getAllSubscriptionRequests();
+  } catch (e) {
+    console.warn('[Analytics] Subscription requests manager fetch warning:', e);
   }
 
   // Merge in-memory fallback events if DB returned empty
   if (allEvents.length === 0) {
     allEvents = [...fallbackEventsBuffer];
+  }
+
+  // Auto-recover any subscription requests from analytics event telemetry if missing
+  const requestEmails = new Set(allRequests.map((r) => r.email.toLowerCase()));
+  for (const evt of allEvents) {
+    if (evt.eventType === 'subscription_request' && evt.userEmail && !requestEmails.has(evt.userEmail.toLowerCase())) {
+      let meta: any = {};
+      try {
+        meta = typeof evt.metadata === 'string' ? JSON.parse(evt.metadata) : evt.metadata;
+      } catch {}
+
+      allRequests.push({
+        id: meta?.requestId || evt.id,
+        userId: evt.userId || null,
+        email: evt.userEmail,
+        userName: meta?.name || 'Customer',
+        siteUrl: meta?.siteUrl || null,
+        plan: meta?.plan || 'Full Site Report Unlock (₹999)',
+        amount: 99900,
+        source: meta?.source || 'dashboard_banner',
+        status: 'pending',
+        notes: `Recorded via event telemetry at ${new Date(evt.createdAt).toLocaleString()}`,
+        createdAt: new Date(evt.createdAt),
+        updatedAt: new Date(evt.createdAt),
+      });
+      requestEmails.add(evt.userEmail.toLowerCase());
+    }
   }
 
   // Apply time range filter
