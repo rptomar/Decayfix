@@ -361,79 +361,110 @@ Please generate a comprehensive, ready-to-publish content refresh:
             </div>
           )}
 
-          {/* SERP Intent Shift Analyzer (Competitor Comparison) */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 sm:p-8 space-y-6">
-            <div className="flex items-center justify-between">
+          {/* SERP Intent Shift Analyzer (Dynamic Query & Intent Insights) */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 sm:p-8 space-y-6 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-white font-bold text-base">
                   <Compass className="w-4 h-4 text-sky-400" />
                   <span>SERP Intent Shift Analyzer</span>
                 </div>
                 <p className="text-xs text-slate-400">
-                  Top 3 Google SERP competitors have gained traffic by answering emerging subtopics.
+                  Search intent diagnosis and competitive ranking breakdown for this URL.
                 </p>
               </div>
-              <span className="px-2.5 py-1 rounded-md bg-sky-500/10 text-sky-300 border border-sky-500/20 text-xs font-semibold">
+              <span className="px-2.5 py-1 rounded-md bg-sky-500/10 text-sky-300 border border-sky-500/20 text-xs font-semibold self-start sm:self-auto">
                 Live Analysis
               </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Card 1: Primary Query Movement */}
               <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
                 <div className="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span>#1 Competitor SERP Gap</span>
+                  <span>#1 Ranking Shift</span>
                 </div>
-                <div className="text-xs text-slate-200 font-semibold">New Pricing & Capacity Tables</div>
+                <div className="text-xs text-slate-200 font-semibold">
+                  {pageData.topQueries && pageData.topQueries[0]
+                    ? `Drop on "${pageData.topQueries[0].query}"`
+                    : `Search Drop on "${pageData.title}"`}
+                </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Competitor pages updated in 2026 feature structured comparison tables with concrete square footage & pricing ranges.
+                  {pageData.topQueries && pageData.topQueries[0]
+                    ? `Average Google position shifted from rank ${pageData.topQueries[0].baselinePosition} to ${pageData.topQueries[0].recentPosition} (lost ${pageData.topQueries[0].clicksLost} search clicks to competing results).`
+                    : `Page traffic dropped ${pageData.dropPercentClicks}% (${pageData.clicksLost || Math.max(0, pageData.baselineClicks - pageData.recentClicks)} lost clicks) compared to previous baseline window.`}
                 </p>
               </div>
 
+              {/* Card 2: Secondary Query or Intent Expansion */}
               <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
                 <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span>#2 Missing Intent Query</span>
+                  <span>#2 Intent Opportunity</span>
                 </div>
-                <div className="text-xs text-slate-200 font-semibold">FAQ Structured Data (PAA)</div>
+                <div className="text-xs text-slate-200 font-semibold">
+                  {pageData.topQueries && pageData.topQueries[1]
+                    ? `Target Query: "${pageData.topQueries[1].query}"`
+                    : 'Targeted FAQ & PAA Schema'}
+                </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Your page lacks schema markup for "People Also Ask" questions like leasing terms, deposit criteria, and location access.
+                  {pageData.topQueries && pageData.topQueries[1]
+                    ? `Competitors are capturing clicks on "${pageData.topQueries[1].query}" (current position ${pageData.topQueries[1].recentPosition}). Add a dedicated H2 section addressing this exact search query.`
+                    : `Inject structured FAQ markup answering "People Also Ask" questions related to ${pageData.title} to recapture lost impressions.`}
                 </p>
               </div>
 
+              {/* Card 3: Internal Authority Reinforcement */}
               <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
                 <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
                   <span>#3 Internal Authority</span>
                 </div>
                 <div className="text-xs text-slate-200 font-semibold">Inbound Internal Links</div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Competitors distribute authority through 4–6 contextual in-content links from high-performing homepage and category hubs.
+                  Distribute page authority by routing 2–3 contextual in-content anchor links from your top-performing website pages directly to this URL.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Recommended Refresh Checklist */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 sm:p-8 space-y-4">
+          {/* Recommended Refresh Checklist (Dynamic Actions) */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 sm:p-8 space-y-4 shadow-xl">
             <h3 className="text-base font-bold text-white">Recommended Refresh Checklist</h3>
             <div className="space-y-3 text-sm text-slate-300">
               <div className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950/40 border border-slate-800/80">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
-                  <strong className="text-white block font-medium">Update Outdated References & Dates</strong>
-                  <span className="text-xs text-slate-400">Replace obsolete year modifiers, outdated pricing figures, and dead links.</span>
+                  <strong className="text-white block font-medium">
+                    {pageData.topQueries && pageData.topQueries[0]
+                      ? `Update Title & Meta for "${pageData.topQueries[0].query}"`
+                      : `Update Title Tag & Meta Description`}
+                  </strong>
+                  <span className="text-xs text-slate-400">
+                    Include high-CTR action words and current year modifiers to increase organic search click-through rate.
+                  </span>
                 </div>
               </div>
+
               <div className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950/40 border border-slate-800/80">
                 <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
                 <div>
-                  <strong className="text-white block font-medium">Add Competitor Subtopics & Intent Section</strong>
-                  <span className="text-xs text-slate-400">Inject an FAQ or comparison section answering current high-volume search queries.</span>
+                  <strong className="text-white block font-medium">
+                    Add Competitor Subtopics & Comparison Tables
+                  </strong>
+                  <span className="text-xs text-slate-400">
+                    Audit the top 3 ranking Google results for {pageData.title} to cover missing subheadings, pricing ranges, and case studies.
+                  </span>
                 </div>
               </div>
+
               <div className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950/40 border border-slate-800/80">
                 <CheckCircle2 className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
                 <div>
-                  <strong className="text-white block font-medium">Internal Linking Authority Boost</strong>
-                  <span className="text-xs text-slate-400">Add 2–3 contextual links from newly ranking site pages pointing directly to this URL.</span>
+                  <strong className="text-white block font-medium">
+                    Internal Linking Authority Boost
+                  </strong>
+                  <span className="text-xs text-slate-400">
+                    Add 2–3 contextual links with descriptive anchor text from newly published or high-traffic pages pointing directly to this URL.
+                  </span>
                 </div>
               </div>
             </div>
