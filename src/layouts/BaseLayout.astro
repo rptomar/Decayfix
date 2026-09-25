@@ -9,6 +9,8 @@ interface Props {
   description?: string;
   canonical?: string;
   noIndex?: boolean;
+  hideHeader?: boolean;
+  hideFooter?: boolean;
 }
 
 const {
@@ -16,6 +18,8 @@ const {
   description = 'DecayFix by SprintLabs.ai connects to Google Search Console, pinpoints decaying blog posts with 20%+ traffic drops, and provides AI action plans to revive lost Google traffic.',
   canonical = Astro.url.href,
   noIndex = false,
+  hideHeader = false,
+  hideFooter = false,
 } = Astro.props;
 
 const session = await getSession(Astro.request);
@@ -65,60 +69,62 @@ const fullTitle = title.includes('DecayFix') ? title : `${title} | ${siteName}`;
   </head>
   <body class="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white antialiased font-sans">
     <!-- Top Navigation -->
-    <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-40">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <!-- Logo with SprintLabs.ai Parent Branding -->
-        <a href="/" class="flex items-center gap-3 group">
-          <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-sky-400 flex items-center justify-center font-black text-white text-lg shadow-sm group-hover:scale-105 transition-transform">
-            ⚡
-          </div>
-          <div class="flex flex-col">
-            <div class="flex items-center gap-1.5">
-              <span class="font-extrabold text-lg tracking-tight text-white">
-                Decay<span class="text-sky-400">Fix</span>
+    {!hideHeader && (
+      <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <!-- Logo with SprintLabs.ai Parent Branding -->
+          <a href="/" class="flex items-center gap-3 group">
+            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-sky-400 flex items-center justify-center font-black text-white text-lg shadow-sm group-hover:scale-105 transition-transform">
+              ⚡
+            </div>
+            <div class="flex flex-col">
+              <div class="flex items-center gap-1.5">
+                <span class="font-extrabold text-lg tracking-tight text-white">
+                  Decay<span class="text-sky-400">Fix</span>
+                </span>
+              </div>
+              <span class="text-[10px] font-medium text-slate-400 -mt-1 tracking-wider uppercase flex items-center gap-1">
+                by <span class="text-sky-400 font-semibold lowercase">sprintlabs.ai</span>
               </span>
             </div>
-            <span class="text-[10px] font-medium text-slate-400 -mt-1 tracking-wider uppercase flex items-center gap-1">
-              by <span class="text-sky-400 font-semibold lowercase">sprintlabs.ai</span>
-            </span>
-          </div>
-        </a>
+          </a>
 
-        <nav class="flex items-center gap-4 sm:gap-6 text-sm font-medium text-slate-300">
-          <a href="/pricing" class="hover:text-white transition-colors">Pricing</a>
-          
-          {isAuthenticated ? (
-            <>
-              <a href="/dashboard" class="hidden sm:inline-block text-slate-300 hover:text-white transition-colors">
-                Dashboard
-              </a>
-              <a
-                href="/dashboard"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm shadow-md shadow-indigo-600/20 transition-all hover:scale-[1.02]"
-              >
-                <span>Go to Dashboard</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </a>
-            </>
-          ) : (
-            <>
-              <a href="/login" class="text-slate-300 hover:text-white transition-colors">Sign In</a>
-              <a
-                href="/login"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/20 transition-all hover:scale-[1.02]"
-              >
-                <span>Connect Search Console</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </a>
-            </>
-          )}
-        </nav>
-      </div>
-    </header>
+          <nav class="flex items-center gap-4 sm:gap-6 text-sm font-medium text-slate-300">
+            <a href="/pricing" class="hover:text-white transition-colors">Pricing</a>
+            
+            {isAuthenticated ? (
+              <>
+                <a href="/dashboard" class="hidden sm:inline-block text-slate-300 hover:text-white transition-colors">
+                  Dashboard
+                </a>
+                <a
+                  href="/dashboard"
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm shadow-md shadow-indigo-600/20 transition-all hover:scale-[1.02]"
+                >
+                  <span>Go to Dashboard</span>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </a>
+              </>
+            ) : (
+              <>
+                <a href="/login" class="text-slate-300 hover:text-white transition-colors">Sign In</a>
+                <a
+                  href="/login"
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/20 transition-all hover:scale-[1.02]"
+                >
+                  <span>Connect Search Console</span>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </a>
+              </>
+            )}
+          </nav>
+        </div>
+      </header>
+    )}
 
     <!-- Main Content Slot -->
     <main class="flex-grow">
@@ -126,26 +132,28 @@ const fullTitle = title.includes('DecayFix') ? title : `${title} | ${siteName}`;
     </main>
 
     <!-- Global Footer with SprintLabs.ai Parent Branding -->
-    <footer class="border-t border-slate-800/80 bg-slate-950 py-12 text-sm text-slate-400">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-6">
-        <div class="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
-          <div class="flex items-center gap-2">
-            <span class="font-bold text-slate-200">DecayFix</span>
-            <span class="text-xs px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">
-              by <a href="https://sprintlabs.ai" target="_blank" rel="noopener noreferrer" class="text-sky-400 font-semibold hover:underline">sprintlabs.ai</a>
-            </span>
+    {!hideFooter && (
+      <footer class="border-t border-slate-800/80 bg-slate-950 py-12 text-sm text-slate-400">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div class="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-200">DecayFix</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">
+                by <a href="https://sprintlabs.ai" target="_blank" rel="noopener noreferrer" class="text-sky-400 font-semibold hover:underline">sprintlabs.ai</a>
+              </span>
+            </div>
+            <span class="hidden sm:inline text-slate-600">•</span>
+            <span class="text-xs text-slate-400">Accelerated Intelligence for Continuous Search Traffic Optimization</span>
           </div>
-          <span class="hidden sm:inline text-slate-600">•</span>
-          <span class="text-xs text-slate-400">Accelerated Intelligence for Continuous Search Traffic Optimization</span>
+          
+          <div class="flex items-center gap-6 text-xs">
+            <a href="/pricing" class="hover:text-slate-200 transition-colors">Pricing</a>
+            <a href="/privacy" class="hover:text-slate-200 transition-colors">Privacy Policy</a>
+            <a href="/terms" class="hover:text-slate-200 transition-colors">Terms of Service</a>
+            <a href="/admin" class="text-slate-500 hover:text-indigo-400 transition-colors font-medium">Admin Portal</a>
+          </div>
         </div>
-        
-        <div class="flex items-center gap-6 text-xs">
-          <a href="/pricing" class="hover:text-slate-200 transition-colors">Pricing</a>
-          <a href="/privacy" class="hover:text-slate-200 transition-colors">Privacy Policy</a>
-          <a href="/terms" class="hover:text-slate-200 transition-colors">Terms of Service</a>
-          <a href="/admin" class="text-slate-500 hover:text-indigo-400 transition-colors font-medium">Admin Portal</a>
-        </div>
-      </div>
-    </footer>
+      </footer>
+    )}
   </body>
 </html>

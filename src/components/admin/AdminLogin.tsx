@@ -40,13 +40,21 @@ export default function AdminLogin() {
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 font-bold text-indigo-400 text-xl mx-auto mb-3 shadow-lg">
-            <Lock className="w-6 h-6" />
+          <a href="/" className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-sky-400 font-black text-white text-2xl mx-auto mb-3 shadow-lg shadow-indigo-500/20 hover:scale-105 transition-transform">
+            ⚡
+          </a>
+          <h1 className="text-2xl font-bold text-white mb-1 flex items-center justify-center gap-2">
+            <span>Decay<span className="text-sky-400">Fix</span></span>
+            <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-[10px] font-semibold uppercase tracking-wider">
+              Admin
+            </span>
+          </h1>
+          
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-800/90 border border-slate-700 text-[11px] font-medium text-slate-300 mb-3">
+            <span>by</span>
+            <span className="text-sky-400 font-semibold tracking-wide">sprintlabs.ai</span>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-1">Admin Portal</h1>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[11px] font-medium text-slate-300 mb-2">
-            <span>DecayFix Operations & Analytics</span>
-          </div>
+
           <p className="text-xs text-slate-400">
             Sign in with administrative credentials to access business metrics and subscription controls.
           </p>

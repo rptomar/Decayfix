@@ -238,19 +238,21 @@ export default function AdminDashboard({ admin }: Props) {
       <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-sm">
-              🛡️
-            </div>
-            <div>
+            <a href="/" className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-sky-400 flex items-center justify-center font-black text-white text-lg shadow-sm hover:scale-105 transition-transform">
+              ⚡
+            </a>
+            <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-white text-base tracking-tight">
-                  Decay<span className="text-sky-400">Fix</span> Admin
-                </span>
+                <a href="/" className="font-extrabold text-lg tracking-tight text-white hover:opacity-90 transition-opacity">
+                  Decay<span className="text-sky-400">Fix</span>
+                </a>
                 <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-[10px] font-semibold uppercase tracking-wider">
-                  Live Control
+                  Admin
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">Business telemetry & subscription manager</p>
+              <span className="text-[10px] font-medium text-slate-400 -mt-1 tracking-wider uppercase flex items-center gap-1">
+                by <span className="text-sky-400 font-semibold lowercase">sprintlabs.ai</span>
+              </span>
             </div>
           </div>
 
