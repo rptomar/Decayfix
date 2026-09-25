@@ -15,7 +15,7 @@ import {
 } from '../constants';
 import crypto from 'node:crypto';
 
-function runTests() {
+async function runTests() {
   console.log('========================================');
   console.log('   DecayFix Core Engine Unit Tests      ');
   console.log('========================================\n');
@@ -169,9 +169,55 @@ function runTests() {
   console.assert(verifyRazorpayWebhookSignature(rawBody, invalidSignature, secret) === false, 'Tampered signature must fail');
   console.log('✓ Test 10: Razorpay Webhook signature verification passed');
 
+  // Test 11: Admin Credentials Verification & Token Signing
+  const { verifyAdminCredentials, createAdminToken, verifyAdminToken, DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD } = await import('../adminAuth');
+  const adminAuthRes = await verifyAdminCredentials(DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD);
+  console.assert(adminAuthRes.success === true, 'Admin credentials check with default admin should succeed');
+  console.assert(adminAuthRes.admin?.role === 'super_admin', 'Admin user must have role super_admin');
+
+  const invalidAdminAuth = await verifyAdminCredentials('wrong@admin.com', 'wrongpassword');
+  console.assert(invalidAdminAuth.success === false, 'Invalid credentials check must fail');
+
+  const adminToken = createAdminToken(adminAuthRes.admin!);
+  const verifiedAdmin = verifyAdminToken(adminToken);
+  console.assert(verifiedAdmin !== null, 'Valid signed admin token must decode');
+  console.assert(verifiedAdmin?.email === DEFAULT_ADMIN_EMAIL, 'Decoded token email must match');
+  console.log('✓ Test 11: Admin authentication & signed session tokens passed');
+
+  // Test 12: Subscription Activation by Email & Entitlement Check
+  const { activateUserSubscriptionByEmail, checkSiteUnlockStatus } = await import('../entitlement');
+  const testEmail = 'vipblogger@example.com';
+  const preActivationStatus = await checkSiteUnlockStatus('user_123', null, testEmail);
+  console.assert(preActivationStatus.isUnlocked === false, 'Pre-activation status must be unlocked = false');
+
+  const activationRes = await activateUserSubscriptionByEmail({
+    email: testEmail,
+    name: 'VIP Blogger',
+    amount: 99900,
+  });
+  console.assert(activationRes.success === true, 'Activation by email must succeed');
+
+  const postActivationStatus = await checkSiteUnlockStatus('user_123', null, testEmail);
+  console.assert(postActivationStatus.isUnlocked === true, 'Post-activation status must be unlocked = true');
+  console.log('✓ Test 12: Manual subscription activation by email passed');
+
+  // Test 13: Analytics Event Tracking & Telemetry Buffer
+  const { trackEvent, getAdminAnalyticsOverview } = await import('../analytics');
+  await trackEvent({
+    eventType: 'unlock_button_click',
+    userEmail: testEmail,
+    path: '/dashboard',
+    metadata: { source: 'dashboard_banner' },
+  });
+
+  const analyticsOverview = await getAdminAnalyticsOverview('all');
+  console.assert(analyticsOverview.summary.unlockButtonClicksCount >= 1, 'Analytics summary must record unlock clicks');
+  console.log('✓ Test 13: Analytics event tracking & KPI compilation passed');
+
   console.log('\n======================================================');
-  console.log('  All 10 core automated verification test suites passed! 🎉');
+  console.log('  All 13 core automated verification test suites passed! 🎉');
   console.log('======================================================\n');
 }
 
 runTests();
+

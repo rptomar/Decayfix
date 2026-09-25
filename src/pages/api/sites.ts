@@ -4,10 +4,12 @@ import { getUserGoogleTokens, getUserGoogleRefreshToken } from '@/lib/auth';
 import { fetchUserGscSites } from '@/lib/gsc';
 import { db, sites } from '@/db';
 import { eq } from 'drizzle-orm';
+import { trackApiHit } from '@/lib/analytics';
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ request }) => {
+  const startTime = Date.now();
   const session = await getSession(request);
   if (!session?.user?.id) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -76,6 +78,14 @@ export const GET: APIRoute = async ({ request }) => {
       }
     }
 
+    await trackApiHit('/api/sites', {
+      status: 200,
+      durationMs: Date.now() - startTime,
+      userId,
+      userEmail: session.user.email,
+      extra: { count: savedSites.length },
+    });
+
     return new Response(
       JSON.stringify({
         sites: savedSites,
@@ -87,6 +97,14 @@ export const GET: APIRoute = async ({ request }) => {
       }
     );
   } catch (error: any) {
+    await trackApiHit('/api/sites', {
+      status: 500,
+      durationMs: Date.now() - startTime,
+      userId,
+      userEmail: session?.user?.email,
+      extra: { error: error?.message },
+    });
+
     return new Response(
       JSON.stringify({ error: error?.message || 'Failed to fetch sites' }),
       {

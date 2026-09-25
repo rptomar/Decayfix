@@ -160,3 +160,57 @@ export const purchases = pgTable('purchases', {
   status: text('status').default('completed').notNull(), // 'completed', 'pending'
   unlockedAt: timestamp('unlockedAt', { mode: 'date' }).defaultNow().notNull(),
 });
+
+/**
+ * Admin Credentials and Users Table
+ */
+export const adminUsers = pgTable('adminUsers', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  email: text('email').notNull().unique(),
+  username: text('username').unique(),
+  name: text('name').default('Administrator'),
+  passwordHash: text('passwordHash').notNull(),
+  role: text('role').default('admin').notNull(),
+  createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
+  lastLoginAt: timestamp('lastLoginAt', { mode: 'date' }),
+});
+
+/**
+ * User Subscription Requests (When payment gateway is under maintenance)
+ */
+export const subscriptionRequests = pgTable('subscriptionRequests', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text('userId').references(() => users.id, { onDelete: 'set null' }),
+  email: text('email').notNull(),
+  userName: text('userName'),
+  siteUrl: text('siteUrl'),
+  plan: text('plan').default('Full Site Report Unlock (₹999)').notNull(),
+  amount: integer('amount').default(99900).notNull(), // in paise
+  source: text('source').default('dashboard_banner').notNull(), // e.g. 'dashboard_banner', 'locked_card', 'page_detail', 'billing_page', 'pricing_page'
+  status: text('status').default('pending').notNull(), // 'pending', 'contacted', 'activated', 'cancelled'
+  notes: text('notes'),
+  createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).defaultNow().notNull(),
+});
+
+/**
+ * Comprehensive Analytics and Business Tracking Events
+ */
+export const analyticsEvents = pgTable('analyticsEvents', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  eventType: text('eventType').notNull(), // 'page_view', 'user_login', 'site_analyze', 'api_hit', 'ai_suggestion_copy', 'unlock_button_click', 'subscription_request'
+  userId: text('userId').references(() => users.id, { onDelete: 'set null' }),
+  userEmail: text('userEmail'),
+  path: text('path'),
+  ipHash: text('ipHash'),
+  userAgent: text('userAgent'),
+  metadata: text('metadata'), // JSON string with specific payload
+  createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
+});
+

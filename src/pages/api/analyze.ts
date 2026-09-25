@@ -21,10 +21,12 @@ import {
   GSC_LAG_BUFFER_DAYS,
   FREE_TIER_PAGE_LIMIT,
 } from '@/lib/constants';
+import { trackSiteAnalyze, trackApiHit } from '@/lib/analytics';
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
+  const startTime = Date.now();
   const session = await getSession(request);
   if (!session?.user?.id) {
     return new Response(JSON.stringify({ error: 'Unauthorized. Please sign in.' }), {
@@ -297,6 +299,27 @@ export const POST: APIRoute = async ({ request }) => {
     // 9. Enforce server-side paywall gating
     const gated = gateAnalyzedPages(processedPages, entitlement.isUnlocked);
 
+    // Telemetry tracking
+    await trackSiteAnalyze({
+      userId,
+      userEmail: session.user.email,
+      siteUrl,
+      totalPages: totalAnalyzed,
+      flaggedPages: totalFlaggedCount,
+      clicksLost: totalClicksLost,
+      healthScore: health.score,
+      isUnlocked: entitlement.isUnlocked,
+    });
+
+    await trackApiHit('/api/analyze', {
+      status: 200,
+      durationMs: Date.now() - startTime,
+      userId,
+      userEmail: session.user.email,
+      siteUrl,
+      extra: { totalAnalyzed, totalFlaggedCount },
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -321,6 +344,15 @@ export const POST: APIRoute = async ({ request }) => {
     );
   } catch (error: any) {
     console.error('Analysis error:', error);
+    await trackApiHit('/api/analyze', {
+      status: 500,
+      durationMs: Date.now() - startTime,
+      userId,
+      userEmail: session?.user?.email,
+      siteUrl: targetSiteUrl,
+      extra: { error: error?.message },
+    });
+
     return new Response(
       JSON.stringify({ error: error?.message || 'Failed to complete analysis' }),
       {

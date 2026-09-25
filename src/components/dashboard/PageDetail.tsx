@@ -17,6 +17,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import Sparkline from '@/components/common/Sparkline';
+import SubscriptionRequestModal from '@/components/common/SubscriptionRequestModal';
 
 declare global {
   interface Window {
@@ -71,71 +72,21 @@ export default function PageDetail({
 }: Props) {
   const [isUnlocked, setIsUnlocked] = useState(initialIsUnlocked);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [suggestion, setSuggestion] = useState(pageData.aiSuggestion);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
 
-  useEffect(() => {
-    if (!document.getElementById('razorpay-checkout-script')) {
-      const script = document.createElement('script');
-      script.id = 'razorpay-checkout-script';
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  }, []);
-
-  const handleUnlock = async () => {
-    setPaymentLoading(true);
-    try {
-      const orderRes = await fetch('/api/billing/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-
-      const orderData = await orderRes.json();
-      if (!orderRes.ok) throw new Error(orderData.error || 'Failed to initialize order');
-
-      if (window.Razorpay && !orderData.isMock) {
-        const options = {
-          key: orderData.keyId || razorpayKeyId,
-          amount: orderData.amount,
-          currency: orderData.currency || 'INR',
-          name: 'DecayFix',
-          description: 'Full Report Unlock',
-          order_id: orderData.orderId,
-          prefill: { name: userName || '', email: userEmail || '' },
-          theme: { color: '#4f46e5' },
-          handler: async function (res: any) {
-            await fetch('/api/billing/verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(res),
-            });
-            setIsUnlocked(true);
-            window.location.reload();
-          },
-        };
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      } else {
-        await fetch('/api/billing/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            razorpay_order_id: orderData.orderId,
-            razorpay_payment_id: `pay_mock_${Date.now()}`,
-            razorpay_signature: 'dev_mock_sig',
-          }),
-        });
-        setIsUnlocked(true);
-        window.location.reload();
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setPaymentLoading(false);
-    }
+  const handleUnlock = () => {
+    setShowUnlockModal(true);
+    fetch('/api/analytics/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventType: 'unlock_button_click',
+        path: '/dashboard/page',
+        metadata: { source: 'page_detail', url: pageData.url },
+      }),
+    }).catch(() => {});
   };
 
   const handleCopyPrompt = () => {
@@ -156,6 +107,17 @@ Please generate a comprehensive, ready-to-publish content refresh:
     navigator.clipboard.writeText(fullPrompt);
     setCopiedPrompt(true);
     setTimeout(() => setCopiedPrompt(false), 2200);
+
+    // Track AI prompt copy event
+    fetch('/api/analytics/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventType: 'ai_suggestion_copy',
+        path: '/dashboard/page',
+        metadata: { url: pageData.url, title: pageData.title },
+      }),
+    }).catch(() => {});
   };
 
   const isLocked = pageData.isLocked && !isUnlocked;
@@ -471,6 +433,16 @@ Please generate a comprehensive, ready-to-publish content refresh:
           </div>
         </div>
       )}
+
+      {/* Payment Gateway Maintenance Modal */}
+      <SubscriptionRequestModal
+        isOpen={showUnlockModal}
+        onClose={() => setShowUnlockModal(false)}
+        userEmail={userEmail}
+        userName={userName}
+        siteUrl={pageData.url}
+        source="page_detail"
+      />
     </div>
   );
 }

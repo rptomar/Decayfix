@@ -9,6 +9,9 @@ import {
   ArrowLeft 
 } from 'lucide-react';
 
+import Sparkline from '@/components/common/Sparkline';
+import SubscriptionRequestModal from '@/components/common/SubscriptionRequestModal';
+
 declare global {
   interface Window {
     Razorpay?: any;
@@ -41,73 +44,21 @@ export default function BillingView({
   userName,
 }: Props) {
   const [isUnlocked, setIsUnlocked] = useState(initialIsUnlocked);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [successNotice, setSuccessNotice] = useState(false);
 
-  useEffect(() => {
-    if (!document.getElementById('razorpay-checkout-script')) {
-      const script = document.createElement('script');
-      script.id = 'razorpay-checkout-script';
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  }, []);
-
-  const handlePayNow = async () => {
-    setPaymentLoading(true);
-    try {
-      const orderRes = await fetch('/api/billing/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-
-      const orderData = await orderRes.json();
-      if (!orderRes.ok) throw new Error(orderData.error || 'Failed to create order');
-
-      if (window.Razorpay && !orderData.isMock) {
-        const options = {
-          key: orderData.keyId || razorpayKeyId,
-          amount: orderData.amount,
-          currency: orderData.currency || 'INR',
-          name: 'DecayFix',
-          description: 'DecayFix Full Site Report Unlock',
-          order_id: orderData.orderId,
-          prefill: { name: userName || '', email: userEmail || '' },
-          theme: { color: '#4f46e5' },
-          handler: async function (res: any) {
-            await fetch('/api/billing/verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(res),
-            });
-            setIsUnlocked(true);
-            setSuccessNotice(true);
-            window.location.reload();
-          },
-        };
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      } else {
-        await fetch('/api/billing/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            razorpay_order_id: orderData.orderId,
-            razorpay_payment_id: `pay_mock_${Date.now()}`,
-            razorpay_signature: 'mock_sig',
-          }),
-        });
-        setIsUnlocked(true);
-        setSuccessNotice(true);
-        window.location.reload();
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setPaymentLoading(false);
-    }
+  const handlePayNow = () => {
+    setShowUnlockModal(true);
+    fetch('/api/analytics/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventType: 'unlock_button_click',
+        path: '/billing',
+        metadata: { source: 'billing_page', userEmail },
+      }),
+    }).catch(() => {});
   };
 
   return (
@@ -216,6 +167,15 @@ export default function BillingView({
           </div>
         )}
       </div>
+
+      {/* Payment Gateway Maintenance Modal */}
+      <SubscriptionRequestModal
+        isOpen={showUnlockModal}
+        onClose={() => setShowUnlockModal(false)}
+        userEmail={userEmail}
+        userName={userName}
+        source="billing_page"
+      />
     </div>
   );
 }

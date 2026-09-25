@@ -23,6 +23,7 @@ import {
   X
 } from 'lucide-react';
 import Sparkline from '@/components/common/Sparkline';
+import SubscriptionRequestModal from '@/components/common/SubscriptionRequestModal';
 
 declare global {
   interface Window {
@@ -125,6 +126,8 @@ export default function DashboardApp({
   // Viral & Productivity states
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDigestModal, setShowDigestModal] = useState(false);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [unlockSource, setUnlockSource] = useState('dashboard_banner');
   const [copiedPromptUrl, setCopiedPromptUrl] = useState<string | null>(null);
   const [copiedCardText, setCopiedCardText] = useState(false);
   const [digestEmail, setDigestEmail] = useState(user.email || '');
@@ -155,6 +158,17 @@ Please provide:
     navigator.clipboard.writeText(prompt);
     setCopiedPromptUrl(page.url);
     setTimeout(() => setCopiedPromptUrl(null), 2200);
+
+    // Track AI prompt copy event
+    fetch('/api/analytics/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventType: 'ai_suggestion_copy',
+        path: '/dashboard',
+        metadata: { url: page.url, title: page.title },
+      }),
+    }).catch(() => {});
   };
 
   const SEO_FACTS = [
@@ -435,82 +449,21 @@ Please provide:
     }
   };
 
-  const handleCheckout = async () => {
-    setPaymentLoading(true);
-    setErrorMsg(null);
+  const handleCheckout = (sourceParam?: any) => {
+    const src = typeof sourceParam === 'string' ? sourceParam : 'dashboard_banner';
+    setUnlockSource(src);
+    setShowUnlockModal(true);
 
-    try {
-      const orderRes = await fetch('/api/billing/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ siteUrl: selectedSiteUrl || customSiteInput }),
-      });
-
-      const orderData = await orderRes.json();
-      if (!orderRes.ok) {
-        throw new Error(orderData.error || 'Could not initiate checkout');
-      }
-
-      if (window.Razorpay && !orderData.isMock) {
-        const options = {
-          key: orderData.keyId || razorpayKeyId,
-          amount: orderData.amount,
-          currency: orderData.currency || 'INR',
-          name: 'DecayFix',
-          description: 'Full Site Content Decay Report Unlock',
-          order_id: orderData.orderId,
-          prefill: {
-            name: user.name || '',
-            email: user.email || '',
-          },
-          theme: {
-            color: '#4f46e5',
-          },
-          handler: async function (response: any) {
-            const verifyRes = await fetch('/api/billing/verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                siteUrl: selectedSiteUrl || customSiteInput,
-              }),
-            });
-
-            if (verifyRes.ok) {
-              setIsUnlocked(true);
-              setPaymentSuccess(true);
-              handleRunAnalysis();
-            }
-          },
-        };
-
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      } else {
-        const verifyRes = await fetch('/api/billing/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            razorpay_order_id: orderData.orderId,
-            razorpay_payment_id: `pay_mock_${Date.now()}`,
-            razorpay_signature: 'dev_mock_signature',
-            siteUrl: selectedSiteUrl || customSiteInput,
-          }),
-        });
-
-        if (verifyRes.ok) {
-          setIsUnlocked(true);
-          setPaymentSuccess(true);
-          handleRunAnalysis();
-        }
-      }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Payment initiation failed');
-    } finally {
-      setPaymentLoading(false);
-    }
+    // Telemetry tracking for unlock button click
+    fetch('/api/analytics/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventType: 'unlock_button_click',
+        path: '/dashboard',
+        metadata: { source: src, siteUrl: selectedSiteUrl || customSiteInput },
+      }),
+    }).catch(() => {});
   };
 
   // Monthly estimated clicks lost calculation (56-day window normalized to 30 days)
@@ -1334,6 +1287,17 @@ Please provide:
           </button>
         </div>
       )}
+
+      {/* Payment Gateway Maintenance - Automated Subscription Request Modal */}
+      <SubscriptionRequestModal
+        isOpen={showUnlockModal}
+        onClose={() => setShowUnlockModal(false)}
+        userEmail={user.email}
+        userName={user.name}
+        siteUrl={selectedSiteUrl || customSiteInput}
+        source={unlockSource}
+      />
     </div>
   );
 }
+

@@ -165,6 +165,16 @@ export const GET: APIRoute = async ({ request, redirect, cookies }) => {
       sameSite: 'lax',
     });
 
+    // Track user login event
+    const { trackEvent } = await import('@/lib/analytics');
+    await trackEvent({
+      eventType: 'user_login',
+      userId,
+      userEmail: profile.email,
+      path: '/api/auth/callback/google',
+      metadata: { name: profile.name, provider: 'google' },
+    });
+
     return redirect('/dashboard');
   } catch (err: any) {
     console.error('Google OAuth callback handler error:', err);

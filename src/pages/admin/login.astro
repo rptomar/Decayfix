@@ -1,0 +1,16 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import AdminLogin from '@/components/admin/AdminLogin';
+import { getAdminSession } from '@/lib/adminAuth';
+
+export const prerender = false;
+
+const admin = await getAdminSession(Astro.request);
+if (admin) {
+  return Astro.redirect('/admin');
+}
+---
+
+<BaseLayout title="Admin Sign In — DecayFix" noIndex={true}>
+  <AdminLogin client:load />
+</BaseLayout>

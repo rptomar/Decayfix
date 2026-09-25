@@ -4,9 +4,12 @@ import { generateContentSuggestion } from '@/lib/ai';
 import { db, pages } from '@/db';
 import { eq } from 'drizzle-orm';
 
+import { trackApiHit } from '@/lib/analytics';
+
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
+  const startTime = Date.now();
   const session = await getSession(request);
   if (!session?.user?.id) {
     return new Response(JSON.stringify({ error: 'Unauthorized. Please sign in.' }), {
@@ -62,6 +65,14 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
+    await trackApiHit('/api/ai/suggest', {
+      status: 200,
+      durationMs: Date.now() - startTime,
+      userId: session.user.id,
+      userEmail: session.user.email,
+      extra: { url, title },
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -75,6 +86,14 @@ export const POST: APIRoute = async ({ request }) => {
     );
   } catch (error: any) {
     console.error('[DecayFix] Error generating single AI suggestion:', error);
+    await trackApiHit('/api/ai/suggest', {
+      status: 500,
+      durationMs: Date.now() - startTime,
+      userId: session?.user?.id,
+      userEmail: session?.user?.email,
+      extra: { error: error?.message },
+    });
+
     return new Response(
       JSON.stringify({ error: error?.message || 'Failed to generate AI suggestion' }),
       {
