@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { getSession } from '@/lib/session';
 import { trackEvent } from '@/lib/analytics';
 import { createSubscriptionRequest } from '@/lib/subscriptionRequests';
+import { sendSubscriptionRequestEmail } from '@/lib/email';
 
 export const prerender = false;
 
@@ -51,6 +52,17 @@ export const POST: APIRoute = async ({ request }) => {
         plan,
         submittedAt: now.toISOString(),
       },
+    });
+
+    // 3. Send email notifications (Customer acknowledgment + Admin alert)
+    sendSubscriptionRequestEmail({
+      toEmail: userEmail,
+      userName,
+      plan,
+      siteUrl,
+      requestId: savedRequest.id,
+    }).catch((emailErr) => {
+      console.error('[DecayFix] Failed to send subscription request email:', emailErr);
     });
 
     const confirmationMessage =

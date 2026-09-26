@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { getSession } from '@/lib/session';
 import { createSupportTicket } from '@/lib/supportTickets';
 import { trackEvent } from '@/lib/analytics';
+import { sendSupportTicketEmail } from '@/lib/email';
 
 export const prerender = false;
 
@@ -60,6 +61,19 @@ export const POST: APIRoute = async ({ request }) => {
         subject,
         siteUrl,
       },
+    });
+
+    // Send confirmation email to user and alert to admin
+    sendSupportTicketEmail({
+      ticketId: ticket.id,
+      toEmail: email,
+      userName: name,
+      subject,
+      category,
+      message,
+      siteUrl,
+    }).catch((emailErr) => {
+      console.error('[Support] Failed to send ticket email:', emailErr);
     });
 
     return new Response(

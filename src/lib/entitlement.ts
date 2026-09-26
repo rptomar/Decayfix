@@ -2,6 +2,7 @@ import { db, purchases, pages, sites, users, subscriptionRequests } from '@/db';
 import { eq, and, or } from 'drizzle-orm';
 import { FREE_TIER_PAGE_LIMIT } from './constants';
 import { trackEvent } from './analytics';
+import { sendSubscriptionActivatedEmail } from './email';
 
 export interface EntitlementStatus {
   isUnlocked: boolean;
@@ -196,6 +197,15 @@ export async function activateUserSubscriptionByEmail(params: {
       adminEmail: params.adminEmail || 'admin',
       purchaseId,
     },
+  });
+
+  // Notify user that their subscription has been activated
+  sendSubscriptionActivatedEmail({
+    toEmail: cleanEmail,
+    userName: params.name,
+    siteUrl: params.siteUrl,
+  }).catch((emailErr) => {
+    console.error('[Entitlement] Failed to send subscription activated email:', emailErr);
   });
 
   return {
