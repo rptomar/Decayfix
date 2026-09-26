@@ -1,6 +1,10 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import HeroTypewriter from '@/components/home/HeroTypewriter';
 import CompetitorScanner from '@/components/home/CompetitorScanner';
+import RoiTrafficCalculator from '@/components/home/RoiTrafficCalculator';
+import DecaySimulator from '@/components/home/DecaySimulator';
+import AudienceMatrix from '@/components/home/AudienceMatrix';
 import { getSession } from '@/lib/session';
 import { checkSiteUnlockStatus } from '@/lib/entitlement';
 
@@ -18,25 +22,33 @@ if (user?.id || user?.email) {
 }
 ---
 
-<BaseLayout title="Find & Fix Decaying Search Traffic on Your Blog">
-  <!-- Hero Section -->
-  <section class="relative overflow-hidden pt-20 pb-28 px-4 sm:px-6">
-    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/30 via-slate-950/80 to-slate-950 -z-10 pointer-events-none"></div>
+<BaseLayout title="Stop Losing Google Traffic — 2026 Content Decay Detection & AI Playbooks">
+  <!-- 1. Hero Section with Animated Typewriter -->
+  <section class="relative overflow-hidden pt-20 pb-24 px-4 sm:px-6">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-950/80 to-slate-950 -z-10 pointer-events-none"></div>
 
     <div class="max-w-4xl mx-auto text-center">
-      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/30 text-xs font-semibold text-indigo-300 mb-6 shadow-sm">
+      {/* Universal Audience Badge */}
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/30 text-xs font-semibold text-indigo-300 mb-6 shadow-sm">
         <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
-        Built for Bloggers & Content Creators
+        Built for SaaS, eCommerce, Agencies, Media & Web Businesses
       </div>
 
-      <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight sm:leading-none mb-6">
+      {/* Main Headline */}
+      <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-tight sm:leading-none mb-6">
         Stop losing Google traffic to <span class="bg-gradient-to-r from-sky-400 via-indigo-300 to-rose-400 bg-clip-text text-transparent">content decay</span>.
       </h1>
 
-      <p class="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
-        Connect your Google Search Console in 10 seconds. DecayFix automatically flags posts with a 20%+ traffic drop and gives you specific Claude AI action plans to revive them.
+      {/* Dynamic Animated Typewriter Rotator */}
+      <div class="mb-8">
+        <HeroTypewriter client:load />
+      </div>
+
+      <p class="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
+        Connect your Google Search Console in 10 seconds. DecayFix compares your last 30 days against a 16-month historical baseline, flags pages losing &ge;20% traffic, and provides step-by-step AI playbooks to regain rankings.
       </p>
 
+      {/* Action CTA Buttons */}
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
         {isAuthenticated ? (
           <a
@@ -59,7 +71,7 @@ if (user?.id || user?.email) {
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
             </svg>
-            <span>Sign in with Google</span>
+            <span>Connect Search Console Free</span>
           </a>
         )}
         <a
@@ -73,135 +85,138 @@ if (user?.id || user?.email) {
       <p class="text-xs text-slate-500 mt-4">
         {isAuthenticated
           ? `Logged in as ${session?.user?.email || 'verified user'} • Ready to audit`
-          : 'Free top 5 preview • No subscription required • Read-only Google Search Console access'}
+          : 'Free top 5 preview • No credit card required • Read-only Google Search Console access'}
       </p>
     </div>
   </section>
 
-  <!-- Competitor Scanner Top-of-Funnel Island -->
-  <section class="max-w-4xl mx-auto px-4 sm:px-6 -mt-10 mb-20">
+  <!-- 2. Interactive Competitor Scanner -->
+  <section class="max-w-4xl mx-auto px-4 sm:px-6 -mt-6 mb-24">
     <CompetitorScanner client:visible />
   </section>
 
-  <!-- Visual Mockup Showcase (Zero JS Static) -->
-  <section class="max-w-5xl mx-auto px-4 sm:px-6 -mt-10 mb-28">
-    <div class="rounded-2xl border border-slate-800 bg-slate-900/90 shadow-2xl overflow-hidden p-6 sm:p-8 backdrop-blur">
-      <div class="flex items-center justify-between pb-6 border-b border-slate-800 mb-6">
-        <div class="flex items-center gap-3">
-          <div class="flex gap-1.5">
-            <div class="w-3 h-3 rounded-full bg-rose-500/80"></div>
-            <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
-            <div class="w-3 h-3 rounded-full bg-emerald-500/80"></div>
-          </div>
-          <span class="text-xs font-mono text-slate-400">DecayFix Analysis • myblog.com</span>
-        </div>
-        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold">
-          <span>8 Decaying Posts Detected</span>
-        </div>
+  <!-- 3. Interactive 2026 ROI & Lost Traffic Calculator -->
+  <section class="max-w-5xl mx-auto px-4 sm:px-6 mb-28">
+    <RoiTrafficCalculator client:visible />
+  </section>
+
+  <!-- 4. Interactive Before vs After Decay Case Study -->
+  <section class="max-w-5xl mx-auto px-4 sm:px-6 mb-28">
+    <DecaySimulator client:visible />
+  </section>
+
+  <!-- 5. Who DecayFix is Built For (Audience Matrix) -->
+  <section class="max-w-5xl mx-auto px-4 sm:px-6 mb-28">
+    <AudienceMatrix client:visible />
+  </section>
+
+  <!-- 6. 2026 Comparison: Why Traditional SEO Tools Fail at Content Decay -->
+  <section class="max-w-5xl mx-auto px-4 sm:px-6 mb-28">
+    <div class="text-center max-w-2xl mx-auto mb-12 space-y-3">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold uppercase tracking-wider">
+        Industry Benchmark
       </div>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-white">
+        Why Traditional SEO Tools Miss Content Decay
+      </h2>
+      <p class="text-slate-400 text-sm">
+        Most rank trackers only alert you on keywords you manually type in. DecayFix detects the silent 16-month erosion across your entire site.
+      </p>
+    </div>
 
-      <!-- Sample Decaying Item -->
-      <div class="space-y-4">
-        <div class="p-5 rounded-xl border border-rose-500/30 bg-rose-950/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div class="space-y-1">
-            <div class="flex items-center gap-2">
-              <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 text-xs font-bold">-68.4% Clicks</span>
-              <span class="text-xs text-slate-400 font-mono">/blog/best-seo-tools-2024</span>
-            </div>
-            <h3 class="text-base font-semibold text-white">Best SEO Tools for Content Creators</h3>
-            <p class="text-xs text-slate-300">
-              <strong class="text-indigo-300 font-medium">Claude Suggestion:</strong> Update year to current calendar year, refresh screenshots of obsolete dashboards, and add coverage for emerging AI search crawlers.
-            </p>
-          </div>
-          <div class="flex items-center gap-6 text-sm text-right shrink-0">
-            <div>
-              <div class="text-xs text-slate-500">Baseline</div>
-              <div class="font-bold text-slate-200">380 clicks</div>
-            </div>
-            <div>
-              <div class="text-xs text-slate-500">Recent</div>
-              <div class="font-bold text-rose-400">120 clicks</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="p-5 rounded-xl border border-slate-800 bg-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div class="space-y-1">
-            <div class="flex items-center gap-2">
-              <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-xs font-bold">-78.5% Clicks</span>
-              <span class="text-xs text-slate-400 font-mono">/blog/how-to-start-a-blog</span>
-            </div>
-            <h3 class="text-base font-semibold text-white">How to Start a WordPress Blog from Scratch</h3>
-            <p class="text-xs text-slate-300">
-              <strong class="text-indigo-300 font-medium">Claude Suggestion:</strong> High intent shift towards modern headless options. Expand guide with a 3-question FAQ answering current hosting queries.
-            </p>
-          </div>
-          <div class="flex items-center gap-6 text-sm text-right shrink-0">
-            <div>
-              <div class="text-xs text-slate-500">Baseline</div>
-              <div class="font-bold text-slate-200">210 clicks</div>
-            </div>
-            <div>
-              <div class="text-xs text-slate-500">Recent</div>
-              <div class="font-bold text-rose-400">45 clicks</div>
-            </div>
-          </div>
-        </div>
+    <div class="rounded-3xl border border-slate-800 bg-slate-900/80 overflow-hidden shadow-2xl backdrop-blur-xl">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+          <thead>
+            <tr class="border-b border-slate-800 bg-slate-950/60 text-slate-400">
+              <th class="p-5 font-semibold">Capabilities & Value</th>
+              <th class="p-5 font-semibold text-slate-500">Traditional Rank Trackers</th>
+              <th class="p-5 font-bold text-indigo-400 bg-indigo-950/30 border-l border-r border-indigo-500/20">⚡ DecayFix 2026</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 text-slate-300">
+            <tr>
+              <td class="p-5 font-medium text-white">16-Month Historical Baseline Comparison</td>
+              <td class="p-5 text-slate-500">❌ Only 30–90 days tracked</td>
+              <td class="p-5 font-bold text-emerald-400 bg-indigo-950/20 border-l border-r border-indigo-500/20">✓ Full 16-Month True Peak Baseline</td>
+            </tr>
+            <tr>
+              <td class="p-5 font-medium text-white">Year-over-Year (YoY) Seasonality Filter</td>
+              <td class="p-5 text-slate-500">❌ Flags normal seasonal drops</td>
+              <td class="p-5 font-bold text-emerald-400 bg-indigo-950/20 border-l border-r border-indigo-500/20">✓ Distinguishes Seasonal vs Algorithmic Decay</td>
+            </tr>
+            <tr>
+              <td class="p-5 font-medium text-white">Automated AI Action Playbooks</td>
+              <td class="p-5 text-slate-500">❌ Raw charts only, zero recommendations</td>
+              <td class="p-5 font-bold text-emerald-400 bg-indigo-950/20 border-l border-r border-indigo-500/20">✓ Tactical Claude AI Refresh Instructions</td>
+            </tr>
+            <tr>
+              <td class="p-5 font-medium text-white">Proactive Monday Morning Alerts</td>
+              <td class="p-5 text-slate-500">❌ You must log in & manually dig</td>
+              <td class="p-5 font-bold text-emerald-400 bg-indigo-950/20 border-l border-r border-indigo-500/20">✓ Automated Email Digests for 20%+ Drops</td>
+            </tr>
+            <tr>
+              <td class="p-5 font-medium text-white">Setup Friction</td>
+              <td class="p-5 text-slate-500">Complex tag managers / tracking scripts</td>
+              <td class="p-5 font-bold text-emerald-400 bg-indigo-950/20 border-l border-r border-indigo-500/20">✓ 1-Click Google Search Console Sign-In</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </section>
 
-  <!-- How It Works Section -->
+  <!-- 7. How DecayFix Works Section -->
   <section class="max-w-5xl mx-auto px-4 sm:px-6 mb-28">
     <div class="text-center max-w-2xl mx-auto mb-16">
-      <h2 class="text-3xl font-bold text-white mb-4">How DecayFix Works</h2>
-      <p class="text-slate-400">Three straightforward steps to pinpoint decaying content and execute fast updates.</p>
+      <h2 class="text-3xl font-bold text-white mb-4">How DecayFix Works in 3 Steps</h2>
+      <p class="text-slate-400">Pinpoint decaying content and execute tactical AI updates in under 60 seconds.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <div class="p-6 rounded-xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between">
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between">
         <div>
-          <div class="w-10 h-10 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold mb-4">
+          <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold mb-4 text-base">
             1
           </div>
           <h3 class="text-lg font-semibold text-white mb-2">Connect Search Console</h3>
           <p class="text-sm text-slate-400 leading-relaxed">
-            Sign in with Google. We request read-only access to your Google Search Console properties.
+            Sign in with Google. We request read-only access to your Google Search Console properties. Zero tracking code needed on your site.
           </p>
         </div>
       </div>
 
-      <div class="p-6 rounded-xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between">
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between">
         <div>
-          <div class="w-10 h-10 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold mb-4">
+          <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold mb-4 text-base">
             2
           </div>
           <h3 class="text-lg font-semibold text-white mb-2">20%+ Drop Detection</h3>
           <p class="text-sm text-slate-400 leading-relaxed">
-            We compare your recent 8-week performance against historical baseline data, identifying URLs losing traction.
+            Our engine scans up to 16 months of historical traffic and filters out seasonal blips to pinpoint true algorithmic decay.
           </p>
         </div>
       </div>
 
-      <div class="p-6 rounded-xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between">
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between">
         <div>
-          <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold mb-4">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold mb-4 text-base">
             3
           </div>
-          <h3 class="text-lg font-semibold text-white mb-2">Claude AI Action Plan</h3>
+          <h3 class="text-lg font-semibold text-white mb-2">AI Refresh Playbooks</h3>
           <p class="text-sm text-slate-400 leading-relaxed">
-            Get 2–4 sentence tactical advice for every post to update outdated stats, answer new intent, and recover lost rankings.
+            Get 2–4 sentence tactical advice for every post to update outdated stats, add missing 2026 intent keywords, and recover lost rankings.
           </p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Inline Pricing Section -->
+  <!-- 8. Pricing Section -->
   <section class="max-w-4xl mx-auto px-4 sm:px-6 mb-28">
     <div class="text-center max-w-2xl mx-auto mb-12">
-      <h2 class="text-3xl font-bold text-white mb-4">Simple, Fair Pricing</h2>
-      <p class="text-slate-400">No recurring subscriptions. Preview your top 5 decaying pages for free or unlock the full report.</p>
+      <h2 class="text-3xl font-bold text-white mb-4">Simple, Transparent Pricing</h2>
+      <p class="text-slate-400">Preview your top 5 decaying pages for free or unlock the continuous monitoring Pro plan.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -215,7 +230,7 @@ if (user?.id || user?.email) {
         <div>
           <div class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Free Preview</div>
           <div class="text-4xl font-extrabold text-white mb-4">$0</div>
-          <p class="text-sm text-slate-400 mb-6">Test the water and fix your biggest traffic leaks.</p>
+          <p class="text-sm text-slate-400 mb-6">Test your domain and fix your biggest traffic leaks immediately.</p>
           <ul class="space-y-3 text-sm text-slate-300">
             <li class="flex items-center gap-2">
               <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
@@ -227,7 +242,7 @@ if (user?.id || user?.email) {
             </li>
             <li class="flex items-center gap-2">
               <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-              <span>Claude AI content update suggestions</span>
+              <span>Claude AI content update playbooks</span>
             </li>
             <li class="flex items-center gap-2 text-slate-500">
               <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
@@ -252,7 +267,7 @@ if (user?.id || user?.email) {
         )}
       </div>
 
-      <!-- Paid Unlock Card -->
+      <!-- Paid Pro Plan Card -->
       <div class={`rounded-2xl border-2 ${isUnlocked ? 'border-emerald-500/80 bg-slate-900/95 shadow-emerald-500/10' : 'border-indigo-500 bg-slate-900/90 shadow-indigo-500/10'} p-8 flex flex-col justify-between relative shadow-xl`}>
         {isUnlocked ? (
           <div class="absolute -top-3.5 right-6 px-3.5 py-1 bg-emerald-500 text-white text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1 shadow-lg shadow-emerald-500/20">
@@ -289,7 +304,7 @@ if (user?.id || user?.email) {
             </li>
             <li class="flex items-center gap-2">
               <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-              <span>Ongoing monitoring & unlimited re-analyses</span>
+              <span>Monday Morning automated decay watchdog</span>
             </li>
             <li class="flex items-center gap-2">
               <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
@@ -326,13 +341,18 @@ if (user?.id || user?.email) {
     </div>
   </section>
 
-  <!-- CTA Banner -->
+  <!-- 9. Final High-Impact CTA Banner -->
   <section class="max-w-4xl mx-auto px-4 sm:px-6 mb-24">
-    <div class="rounded-2xl bg-gradient-to-r from-indigo-900/60 via-slate-900 to-indigo-950/60 border border-indigo-500/20 p-8 sm:p-12 text-center">
-      <h2 class="text-2xl sm:text-3xl font-bold text-white mb-4">Ready to reclaim your lost search rankings?</h2>
-      <p class="text-slate-300 max-w-xl mx-auto mb-8 text-sm sm:text-base">
-        Connect your Search Console right now and find out which pages need a fast update before they drop further.
+    <div class="rounded-3xl bg-gradient-to-r from-indigo-900/60 via-slate-900 to-indigo-950/60 border border-indigo-500/30 p-8 sm:p-14 text-center relative overflow-hidden shadow-2xl">
+      <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      
+      <h2 class="text-2xl sm:text-4xl font-extrabold text-white mb-4">
+        Ready to Reclaim Your Lost Search Rankings?
+      </h2>
+      <p class="text-slate-300 max-w-xl mx-auto mb-8 text-sm sm:text-base leading-relaxed">
+        Connect your Search Console in 10 seconds. Discover which URLs are silently bleeding clicks and execute AI refresh playbooks before competitors outrank you.
       </p>
+      
       {isAuthenticated ? (
         <a
           href="/dashboard"
