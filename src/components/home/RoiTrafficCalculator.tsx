@@ -144,7 +144,7 @@ export default function RoiTrafficCalculator() {
             {/* CTA button */}
             <a
               href="/login"
-              className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02]"
+              className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-[1.02]"
             >
               <span>Scan Your Website Free (Top 5 Preview)</span>
               <ArrowRight className="w-4 h-4" />

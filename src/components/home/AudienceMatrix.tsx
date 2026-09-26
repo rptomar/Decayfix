@@ -143,7 +143,7 @@ export default function AudienceMatrix() {
           </div>
           <a
             href="/login"
-            className="inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-all hover:scale-105"
+            className="inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-xs shadow-lg shadow-indigo-600/25 transition-all hover:scale-105 whitespace-nowrap"
           >
             <span>Scan {activeAudience.title} Site</span>
             <ArrowRight className="w-3.5 h-3.5" />

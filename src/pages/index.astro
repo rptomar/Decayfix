@@ -1,10 +1,10 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import HeroTypewriter from '@/components/home/HeroTypewriter';
-import CompetitorScanner from '@/components/home/CompetitorScanner';
 import RoiTrafficCalculator from '@/components/home/RoiTrafficCalculator';
 import DecaySimulator from '@/components/home/DecaySimulator';
 import AudienceMatrix from '@/components/home/AudienceMatrix';
+import CompetitorScanner from '@/components/home/CompetitorScanner';
 import { getSession } from '@/lib/session';
 import { checkSiteUnlockStatus } from '@/lib/entitlement';
 
@@ -53,7 +53,7 @@ if (user?.id || user?.email) {
         {isAuthenticated ? (
           <a
             href="/dashboard"
-            class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold text-sm sm:text-base shadow-xl shadow-indigo-600/25 transition-all hover:scale-[1.02] whitespace-nowrap"
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-sm sm:text-base shadow-xl shadow-indigo-600/25 transition-all hover:scale-[1.02] whitespace-nowrap"
           >
             <span>Go to Dashboard</span>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,27 +90,22 @@ if (user?.id || user?.email) {
     </div>
   </section>
 
-  <!-- 2. Interactive Competitor Scanner -->
-  <section class="max-w-4xl mx-auto px-4 sm:px-6 -mt-6 mb-24">
-    <CompetitorScanner client:visible />
-  </section>
-
-  <!-- 3. Interactive 2026 ROI & Lost Traffic Calculator -->
+  <!-- 2. Interactive 2026 ROI & Lost Traffic Calculator -->
   <section class="max-w-5xl mx-auto px-4 sm:px-6 mb-28">
     <RoiTrafficCalculator client:visible />
   </section>
 
-  <!-- 4. Interactive Before vs After Decay Case Study -->
+  <!-- 3. Interactive Before vs After Decay Case Study -->
   <section class="max-w-5xl mx-auto px-4 sm:px-6 mb-28">
     <DecaySimulator client:visible />
   </section>
 
-  <!-- 5. Who DecayFix is Built For (Audience Matrix) -->
+  <!-- 4. Who DecayFix is Built For (Audience Matrix) -->
   <section class="max-w-5xl mx-auto px-4 sm:px-6 mb-28">
     <AudienceMatrix client:visible />
   </section>
 
-  <!-- 6. 2026 Comparison: Why Traditional SEO Tools Fail at Content Decay -->
+  <!-- 5. 2026 Comparison: Why Traditional SEO Tools Fail at Content Decay -->
   <section class="max-w-5xl mx-auto px-4 sm:px-6 mb-28">
     <div class="text-center max-w-2xl mx-auto mb-12 space-y-3">
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold uppercase tracking-wider">
@@ -166,7 +161,7 @@ if (user?.id || user?.email) {
     </div>
   </section>
 
-  <!-- 7. How DecayFix Works Section -->
+  <!-- 6. How DecayFix Works Section -->
   <section class="max-w-5xl mx-auto px-4 sm:px-6 mb-28">
     <div class="text-center max-w-2xl mx-auto mb-16">
       <h2 class="text-3xl font-bold text-white mb-4">How DecayFix Works in 3 Steps</h2>
@@ -212,7 +207,7 @@ if (user?.id || user?.email) {
     </div>
   </section>
 
-  <!-- 8. Pricing Section -->
+  <!-- 7. Pricing Section -->
   <section class="max-w-4xl mx-auto px-4 sm:px-6 mb-28">
     <div class="text-center max-w-2xl mx-auto mb-12">
       <h2 class="text-3xl font-bold text-white mb-4">Simple, Transparent Pricing</h2>
@@ -274,7 +269,7 @@ if (user?.id || user?.email) {
             <span>✓ Current Active Plan</span>
           </div>
         ) : (
-          <div class="absolute -top-3.5 right-6 px-3 py-1 bg-indigo-500 text-white text-xs font-bold rounded-full uppercase tracking-wider">
+          <div class="absolute -top-3.5 right-6 px-3.5 py-1 bg-gradient-to-r from-indigo-500 to-sky-400 text-white text-xs font-bold rounded-full uppercase tracking-wider shadow-md">
             Monthly Subscription
           </div>
         )}
@@ -325,20 +320,25 @@ if (user?.id || user?.email) {
         ) : isAuthenticated ? (
           <a
             href="/dashboard"
-            class="mt-8 block text-center py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-600/30 transition-all hover:scale-[1.02]"
+            class="mt-8 block text-center py-3.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02]"
           >
             Upgrade in Dashboard • ₹999/mo
           </a>
         ) : (
           <a
             href="/login"
-            class="mt-8 block text-center py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-md shadow-indigo-600/30 transition-all hover:scale-[1.02]"
+            class="mt-8 block text-center py-3.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02]"
           >
             Sign In & Subscribe • ₹999/mo
           </a>
         )}
       </div>
     </div>
+  </section>
+
+  <!-- 8. Interactive Competitor Scanner (Placed at bottom as an exploratory tool) -->
+  <section class="max-w-4xl mx-auto px-4 sm:px-6 mb-28">
+    <CompetitorScanner client:visible />
   </section>
 
   <!-- 9. Final High-Impact CTA Banner -->
@@ -356,7 +356,7 @@ if (user?.id || user?.email) {
       {isAuthenticated ? (
         <a
           href="/dashboard"
-          class="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-slate-950 font-bold text-base hover:bg-slate-100 shadow-xl transition-all hover:scale-105"
+          class="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-base shadow-xl shadow-indigo-600/30 transition-all hover:scale-105 whitespace-nowrap"
         >
           <span>Launch Your Dashboard</span>
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -366,7 +366,7 @@ if (user?.id || user?.email) {
       ) : (
         <a
           href="/login"
-          class="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-slate-950 font-bold text-base hover:bg-slate-100 shadow-xl transition-all hover:scale-105"
+          class="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-base shadow-xl shadow-indigo-600/30 transition-all hover:scale-105 whitespace-nowrap"
         >
           <span>Connect Search Console Free</span>
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

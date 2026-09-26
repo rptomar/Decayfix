@@ -219,7 +219,7 @@ export default function CompetitorScanner() {
             </div>
             <a
               href="/login"
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md transition-transform hover:scale-105 shrink-0 whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white text-xs font-bold shadow-md shadow-indigo-600/25 transition-transform hover:scale-105 shrink-0 whitespace-nowrap"
             >
               <span>Connect Search Console Free</span>
               <ArrowRight className="w-3.5 h-3.5" />
