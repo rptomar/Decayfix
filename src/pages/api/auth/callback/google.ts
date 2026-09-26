@@ -104,6 +104,13 @@ export const GET: APIRoute = async ({ request, redirect, cookies }) => {
           if (created && created[0]) {
             userId = created[0].id;
           }
+
+          // Trigger Welcome Email for new user
+          const { sendWelcomeEmail } = await import('@/lib/email');
+          sendWelcomeEmail({
+            toEmail: profile.email,
+            userName: profile.name,
+          }).catch((e) => console.error('Failed to send welcome email:', e));
         }
 
         // Upsert account with encrypted tokens

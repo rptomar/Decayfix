@@ -14,6 +14,94 @@ function getResendClient() {
 }
 
 /**
+ * 0. WELCOME / ONBOARDING EMAIL
+ * Triggered on first-time Google OAuth sign in / account creation.
+ */
+export async function sendWelcomeEmail(params: {
+  toEmail: string;
+  userName?: string | null;
+}) {
+  const resend = getResendClient();
+  const siteOrigin = process.env.SITE_URL || 'https://decayfix.sprintlabsai.com';
+  const dashboardLink = `${siteOrigin}/dashboard`;
+  const name = params.userName || 'there';
+
+  if (!resend) {
+    console.log(`[Resend Mock Email] Welcome email to: ${params.toEmail}`);
+    return { success: true, mock: true };
+  }
+
+  try {
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #030712; color: #f8fafc; margin: 0; padding: 24px; }
+    .container { max-width: 600px; margin: 0 auto; background: #0f172a; border-radius: 16px; padding: 36px; border: 1px solid #1e293b; }
+    .logo { font-size: 22px; font-weight: 800; color: #38bdf8; margin-bottom: 24px; }
+    .badge { display: inline-block; background: #1e1b4b; color: #a5b4fc; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 16px; }
+    h1 { color: #ffffff; font-size: 24px; margin-top: 0; }
+    p { color: #94a3b8; line-height: 1.6; font-size: 15px; }
+    .step-box { background: #1e293b; border-radius: 10px; padding: 18px 20px; margin: 16px 0; border: 1px solid #334155; }
+    .step-title { font-weight: 700; color: #f8fafc; font-size: 15px; margin-bottom: 4px; }
+    .step-desc { font-size: 13px; color: #94a3b8; margin: 0; }
+    .btn { display: inline-block; background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); color: #ffffff !important; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 15px; margin: 24px 0; text-align: center; }
+    .footer { margin-top: 32px; font-size: 12px; color: #475569; border-top: 1px solid #1e293b; padding-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">⚡ DecayFix</div>
+    <div class="badge">Welcome Aboard</div>
+    <h1>Welcome to DecayFix, ${name}! 👋</h1>
+    <p>Your Google Search Console connection is ready. DecayFix continuously monitors your organic search performance to identify historical traffic drops (&ge;20%) and generates instant AI refresh blueprints.</p>
+    
+    <div class="step-box">
+      <div class="step-title">1. Select Your Domain</div>
+      <p class="step-desc">Pick any verified property from your Search Console account on your dashboard.</p>
+    </div>
+
+    <div class="step-box">
+      <div class="step-title">2. Run Your First 16-Month Audit</div>
+      <p class="step-desc">Our engine compares your last 30 days against 16-month peak performance baselines.</p>
+    </div>
+
+    <div class="step-box">
+      <div class="step-title">3. Apply AI Playbooks</div>
+      <p class="step-desc">Discover exact missing subtopics, decayed intent keywords, and content refresh actions.</p>
+    </div>
+
+    <div style="text-align: center;">
+      <a href="${dashboardLink}" class="btn">Open Your DecayFix Dashboard →</a>
+    </div>
+
+    <div class="footer">
+      DecayFix by SprintLabs • Continuous Search Traffic Optimization<br>
+      Have questions or need help? Reply directly to this email anytime.
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const result = await resend.emails.send({
+      from: DEFAULT_FROM_EMAIL,
+      to: params.toEmail,
+      replyTo: DEFAULT_REPLY_TO,
+      subject: '⚡ Welcome to DecayFix — Start Your Content Decay Audit',
+      html: htmlContent,
+      text: `Welcome to DecayFix, ${name}!\n\nYour Search Console is connected. Open your dashboard to run your first content decay audit: ${dashboardLink}`,
+    });
+
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error('Failed to send Welcome email:', error?.message || error);
+    return { success: false, error: error?.message };
+  }
+}
+
+/**
  * 1. UNLOCK / PAYMENT CONFIRMATION EMAIL
  * Triggered when a user completes Razorpay payment or gets unlocked.
  */
