@@ -4,7 +4,7 @@
  * Protocol reference: https://www.indexnow.org/
  */
 
-export const INDEXNOW_KEY = process.env.INDEXNOW_KEY || 'd79f046e379b47e4b52b3628e5a7b6cf';
+export const INDEXNOW_KEY = process.env.INDEXNOW_KEY || 'f48a0c2cf0194e85b1c575e98cd0abfa';
 export const SITE_HOST = 'decayfix.sprintlabsai.com';
 export const KEY_LOCATION = `https://${SITE_HOST}/${INDEXNOW_KEY}.txt`;
 
