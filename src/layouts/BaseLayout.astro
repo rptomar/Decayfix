@@ -269,8 +269,10 @@ if (customSchema) {
     ) : (
       <meta name="msvalidate.01" content="C0E783D8982352B880894567B78F046E" />
     )}
-    {process.env.GOOGLE_SITE_VERIFICATION && (
+    {process.env.GOOGLE_SITE_VERIFICATION ? (
       <meta name="google-site-verification" content={process.env.GOOGLE_SITE_VERIFICATION} />
+    ) : (
+      <meta name="google-site-verification" content="google16785acc9b8b82c6" />
     )}
 
     <!-- Open Graph / Social Media -->
