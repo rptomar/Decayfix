@@ -1,0 +1,188 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getSession } from '@/lib/session';
+
+export const prerender = false;
+
+const session = await getSession(Astro.request);
+const isAuthenticated = !!session?.user?.id;
+
+const ecomFaqs = [
+  {
+    question: 'How do buyer guides and gift roundups decay over time?',
+    answer: 'Gift guides, product roundups, and "Best of" articles decay when products become out-of-stock, pricing changes, or newer models launch. Google favors guides with active products and fresh year tags.',
+  },
+  {
+    question: 'How does DecayFix separate seasonal sales drops from real decay?',
+    answer: 'DecayFix compares traffic across a 16-month historical window, enabling you to compare against the previous year (YoY) so you do not mistake post-holiday lulls for algorithmic ranking loss.',
+  },
+  {
+    question: 'Can eCommerce brands track multiple Shopify or WooCommerce domains?',
+    answer: 'Yes! You can connect any verified Google Search Console property and switch between multiple brand domains inside DecayFix.',
+  },
+];
+---
+
+<BaseLayout
+  title="eCommerce SEO Traffic Recovery — Fix Content Decay"
+  description="Protect product guides, gift roundups, and category traffic. DecayFix detects decaying eCommerce content before peak shopping seasons arrive."
+  breadcrumbs={[
+    { name: 'Home', url: '/' },
+    { name: 'Solutions', url: '/#audience' },
+    { name: 'eCommerce & D2C', url: '/for/ecommerce' },
+  ]}
+  faqs={ecomFaqs}
+>
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+    <!-- Hero -->
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/30 text-xs font-semibold text-indigo-300 mb-6 shadow-sm">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        Built for eCommerce Brands & D2C Stores
+      </div>
+
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight mb-6">
+        Protect High-Converting Buying Guides from <span class="bg-gradient-to-r from-sky-400 via-indigo-300 to-rose-400 bg-clip-text text-transparent">Traffic Decay</span>
+      </h1>
+
+      <p class="text-slate-300 text-base sm:text-lg leading-relaxed mb-8">
+        Your holiday gift roundups, product comparison charts, and category buying guides drive organic revenue. When those posts bleed rankings, your ad spend increases. DecayFix pinpoints decaying eCommerce URLs and provides instant AI refresh playbooks.
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        {isAuthenticated ? (
+          <a
+            href="/dashboard"
+            class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105"
+          >
+            Open Your Dashboard →
+          </a>
+        ) : (
+          <a
+            href="/login"
+            class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105"
+          >
+            Connect Search Console Free →
+          </a>
+        )}
+        <a
+          href="/pricing"
+          class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold text-sm transition-all"
+        >
+          View Pricing (₹999/mo)
+        </a>
+      </div>
+    </div>
+
+    <!-- Core eCommerce Pain Points -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-lg">
+          🛍️
+        </div>
+        <h3 class="font-bold text-white text-base">Out-of-Stock Product Decay</h3>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          When high-ranking buying guides link to discontinued inventory, user bounce rate spikes and Google demotes the page.
+        </p>
+      </div>
+
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold text-lg">
+          📅
+        </div>
+        <h3 class="font-bold text-white text-base">Seasonal Demand Blindspots</h3>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Failing to refresh holiday and seasonal guides 60 days before demand peaks leads to lost Page 1 visibility during peak shopping periods.
+        </p>
+      </div>
+
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 font-bold text-lg">
+          💸
+        </div>
+        <h3 class="font-bold text-white text-base">Rising Meta & Google Ad Costs</h3>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          When organic product discovery declines, stores are forced to spend more on paid search and social ads to maintain top-line GMV.
+        </p>
+      </div>
+    </div>
+
+    <!-- How DecayFix Protects eCommerce Stores -->
+    <div class="p-8 sm:p-10 rounded-3xl border border-indigo-500/30 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/40 mb-20 space-y-8">
+      <div class="max-w-2xl">
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-3">
+          How DecayFix Keeps Your eCommerce Catalog Ranking
+        </h2>
+        <p class="text-slate-300 text-sm leading-relaxed">
+          Automated Search Console monitoring to protect your highest-converting buyer guides.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> 20%+ Click Loss Prioritization
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Sorts decaying catalog pages by absolute clicks lost so you update the highest revenue-generating guides first.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> Seasonality Awareness
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            16-month historical baseline helps distinguish seasonal winter/summer demand shifts from true algorithmic penalties.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> Instant AI Action Playbooks
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Generates specific suggestions on missing buyer intent keywords, product spec updates, and title tag hooks.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> Continuous Monitoring
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Track whether your updated buying guides regain rankings after publishing seasonal updates.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Related eCommerce SEO Guides -->
+    <div class="border-t border-slate-800 pt-16 mb-20">
+      <h3 class="text-xl font-bold text-white mb-6">Recommended Reading for eCommerce SEO</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        <a href="/blog/content-decay-vs-seasonal-traffic-drop" class="p-4 rounded-xl border border-slate-800 bg-slate-900/40 hover:border-indigo-500 transition-colors block">
+          <div class="font-bold text-white mb-1">Content Decay vs. Seasonal Traffic Drop →</div>
+          <div class="text-slate-400">Learn how to read YoY Search Console charts for eCommerce seasonality.</div>
+        </a>
+        <a href="/blog/content-refresh-checklist-for-old-blog-posts" class="p-4 rounded-xl border border-slate-800 bg-slate-900/40 hover:border-indigo-500 transition-colors block">
+          <div class="font-bold text-white mb-1">10-Step Content Refresh Checklist →</div>
+          <div class="text-slate-400">Follow our step-by-step workflow to refresh outdated product roundups.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="border-t border-slate-800 pt-16">
+      <h2 class="text-2xl font-bold text-white mb-8 text-center">Frequently Asked Questions</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+        {ecomFaqs.map((faq) => (
+          <div class="p-5 rounded-xl border border-slate-800 bg-slate-900/50">
+            <h3 class="font-bold text-white mb-2">{faq.question}</h3>
+            <p class="text-slate-400 leading-relaxed">{faq.answer}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</BaseLayout>

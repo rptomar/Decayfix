@@ -10,7 +10,11 @@ const user = session?.user;
 
 <BaseLayout
   title="Contact Us — DecayFix by SprintLabs.ai"
-  description="Get in touch with the DecayFix & SprintLabs.ai team for custom content audits, Search Console support, partnerships, or billing questions."
+  description="Contact the DecayFix and SprintLabs.ai engineering team for Search Console support, partnerships, or enterprise content audits."
+  breadcrumbs={[
+    { name: 'Home', url: '/' },
+    { name: 'Contact', url: '/contact' },
+  ]}
 >
   <div class="max-w-3xl mx-auto px-4 sm:px-6 py-20">
     <div class="text-center max-w-xl mx-auto mb-12">

@@ -101,11 +101,25 @@ export async function trackPageView(req: Request, user?: { id?: string; email?: 
     const url = new URL(req.url);
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '127.0.0.1';
     const userAgent = req.headers.get('user-agent') || 'Unknown';
+    const rawReferrer = req.headers.get('referer') || 'direct';
 
-    // Ignore static assets & API internal calls from page views
+    // Ignore static assets & internal system assets
     if (url.pathname.startsWith('/_astro') || url.pathname.startsWith('/favicon') || url.pathname.includes('.')) {
       return;
     }
+
+    // Extract UTM attribution & search engine source
+    const utmSource = url.searchParams.get('utm_source');
+    const utmMedium = url.searchParams.get('utm_medium');
+    const utmCampaign = url.searchParams.get('utm_campaign');
+    
+    let searchEngine = 'direct';
+    if (rawReferrer.includes('google.')) searchEngine = 'google_organic';
+    else if (rawReferrer.includes('bing.')) searchEngine = 'bing_organic';
+    else if (rawReferrer.includes('duckduckgo.')) searchEngine = 'duckduckgo_organic';
+    else if (rawReferrer.includes('perplexity.ai')) searchEngine = 'perplexity_aeo';
+    else if (rawReferrer.includes('chatgpt.com') || rawReferrer.includes('openai.com')) searchEngine = 'chatgpt_aeo';
+    else if (rawReferrer.includes('claude.ai') || rawReferrer.includes('anthropic.com')) searchEngine = 'claude_aeo';
 
     await trackEvent({
       eventType: 'page_view',
@@ -116,7 +130,11 @@ export async function trackPageView(req: Request, user?: { id?: string; email?: 
       userAgent,
       metadata: {
         search: url.search,
-        referrer: req.headers.get('referer') || 'direct',
+        referrer: rawReferrer,
+        searchEngine,
+        utmSource: utmSource || undefined,
+        utmMedium: utmMedium || undefined,
+        utmCampaign: utmCampaign || undefined,
       },
     });
   } catch (e) {

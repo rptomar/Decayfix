@@ -261,8 +261,15 @@ async function runTests() {
   console.assert(adminOverviewWithTickets.summary.supportTicketsCount >= 1, 'Admin overview must reflect support tickets count');
   console.log('✓ Test 15: Support ticket creation, retrieval, update & admin integration passed');
 
+  // Test 16: IndexNow URL formatting & protocol configuration
+  const { INDEXNOW_KEY, SITE_HOST, KEY_LOCATION } = await import('../indexnow');
+  console.assert(INDEXNOW_KEY.length >= 8, 'IndexNow key must be valid hex/key string');
+  console.assert(SITE_HOST === 'decayfix.sprintlabsai.com', 'Site host must match decayfix.sprintlabsai.com');
+  console.assert(KEY_LOCATION === `https://decayfix.sprintlabsai.com/${INDEXNOW_KEY}.txt`, 'Key location URL must be valid');
+  console.log('✓ Test 16: IndexNow key location and protocol parameters verified');
+
   console.log('\n======================================================');
-  console.log('  All 15 core automated verification test suites passed! 🎉');
+  console.log('  All 16 core automated verification test suites passed! 🎉');
   console.log('======================================================\n');
 }
 

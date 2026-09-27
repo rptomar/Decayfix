@@ -4,22 +4,61 @@ import { getSession } from '@/lib/session';
 import { trackPageView } from '@/lib/analytics';
 import { checkSiteUnlockStatus } from '@/lib/entitlement';
 
-interface Props {
+export interface BreadcrumbItem {
+  name: string;
+  url: string;
+}
+
+export interface FAQItem {
+  question: string;
+  answer: string;
+}
+
+export interface ArticleMetadata {
+  headline: string;
+  description?: string;
+  datePublished: string;
+  dateModified?: string;
+  author?: string;
+  image?: string;
+}
+
+export interface Props {
   title: string;
   description?: string;
   canonical?: string;
+  ogImage?: string;
+  ogType?: 'website' | 'article';
+  publishedTime?: string;
+  modifiedTime?: string;
+  author?: string;
   noIndex?: boolean;
   hideHeader?: boolean;
   hideFooter?: boolean;
+  softwareApp?: boolean;
+  breadcrumbs?: BreadcrumbItem[];
+  faqs?: FAQItem[];
+  article?: ArticleMetadata;
+  customSchema?: Record<string, any> | Array<Record<string, any>>;
 }
 
 const {
   title,
-  description = 'DecayFix by SprintLabs.ai connects to Google Search Console, pinpoints decaying blog posts with 20%+ traffic drops, and provides AI action plans to revive lost Google traffic.',
-  canonical = Astro.url.href,
+  description = 'DecayFix connects to Google Search Console, pinpoints decaying blog posts with 20%+ traffic drops, and provides AI playbooks to regain lost rankings.',
+  canonical,
+  ogImage,
+  ogType = 'website',
+  publishedTime,
+  modifiedTime,
+  author = 'DecayFix Team',
   noIndex = false,
   hideHeader = false,
   hideFooter = false,
+  softwareApp = false,
+  breadcrumbs,
+  faqs,
+  article,
+  customSchema,
 } = Astro.props;
 
 const session = await getSession(Astro.request);
@@ -38,8 +77,164 @@ const isDashboard = currentPath === '/dashboard' || currentPath.startsWith('/das
 // Server-side page view telemetry
 await trackPageView(Astro.request, user);
 
-const siteName = 'DecayFix by SprintLabs.ai';
-const fullTitle = title.includes('DecayFix') ? title : `${title} | ${siteName}`;
+const siteName = 'DecayFix';
+const parentBrand = 'SprintLabs.ai';
+const siteUrl = 'https://decayfix.sprintlabsai.com';
+
+const canonicalUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
+const fullTitle = title.includes('DecayFix') ? title : `${title} | DecayFix by ${parentBrand}`;
+
+const defaultOgImage = `${siteUrl}/og-image.jpg`;
+const resolvedOgImage = ogImage
+  ? ogImage.startsWith('http')
+    ? ogImage
+    : `${siteUrl}${ogImage.startsWith('/') ? '' : '/'}${ogImage}`
+  : defaultOgImage;
+
+// Structured Data (JSON-LD) Schemas
+const orgSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  '@id': `${siteUrl}/#organization`,
+  name: 'DecayFix',
+  legalName: 'SprintLabs.ai',
+  url: siteUrl,
+  logo: {
+    '@type': 'ImageObject',
+    url: `${siteUrl}/favicon.svg`,
+  },
+  image: defaultOgImage,
+  description: 'AI-powered Google Search Console content decay detection and traffic recovery engine.',
+  parentOrganization: {
+    '@type': 'Organization',
+    name: 'SprintLabs.ai',
+    url: 'https://sprintlabsai.com',
+  },
+  sameAs: [
+    'https://sprintlabsai.com',
+    'https://twitter.com/sprintlabsai',
+  ],
+};
+
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  '@id': `${siteUrl}/#website`,
+  url: siteUrl,
+  name: 'DecayFix',
+  description: 'Google Search Console Content Decay Detector & AI Recovery Engine',
+  publisher: {
+    '@id': `${siteUrl}/#organization`,
+  },
+};
+
+const webPageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': `${canonicalUrl}#webpage`,
+  url: canonicalUrl,
+  name: fullTitle,
+  description: description,
+  inLanguage: 'en-US',
+  isPartOf: {
+    '@id': `${siteUrl}/#website`,
+  },
+  datePublished: publishedTime || '2026-01-15T00:00:00Z',
+  dateModified: modifiedTime || '2026-09-27T00:00:00Z',
+  author: {
+    '@type': 'Organization',
+    name: author || 'DecayFix Editorial Team',
+    url: siteUrl,
+  },
+};
+
+const schemas: Array<Record<string, any>> = [orgSchema, websiteSchema, webPageSchema];
+
+if (softwareApp) {
+  schemas.push({
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    '@id': `${siteUrl}/#software`,
+    name: 'DecayFix',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    url: siteUrl,
+    description: 'Connect Google Search Console to detect decaying URLs with 20%+ traffic drops and generate AI content refresh playbooks.',
+    offers: {
+      '@type': 'Offer',
+      price: '999',
+      priceCurrency: 'INR',
+      priceValidUntil: '2027-12-31',
+      availability: 'https://schema.org/InStock',
+      url: `${siteUrl}/pricing`,
+    },
+    provider: {
+      '@id': `${siteUrl}/#organization`,
+    },
+  });
+}
+
+if (breadcrumbs && breadcrumbs.length > 0) {
+  schemas.push({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: crumb.url.startsWith('http')
+        ? crumb.url
+        : `${siteUrl}${crumb.url.startsWith('/') ? '' : '/'}${crumb.url}`,
+    })),
+  });
+}
+
+if (faqs && faqs.length > 0) {
+  schemas.push({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  });
+}
+
+if (article) {
+  schemas.push({
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: article.headline,
+    description: article.description || description,
+    image: article.image || resolvedOgImage,
+    datePublished: article.datePublished,
+    dateModified: article.dateModified || article.datePublished,
+    author: {
+      '@type': 'Organization',
+      name: article.author || 'DecayFix Team',
+      url: siteUrl,
+    },
+    publisher: {
+      '@id': `${siteUrl}/#organization`,
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': canonicalUrl,
+    },
+  });
+}
+
+if (customSchema) {
+  if (Array.isArray(customSchema)) {
+    schemas.push(...customSchema);
+  } else {
+    schemas.push(customSchema);
+  }
+}
 ---
 
 <!doctype html>
@@ -50,7 +245,7 @@ const fullTitle = title.includes('DecayFix') ? title : `${title} | ${siteName}`;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
 
-    <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+    <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono with font-display: swap -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -61,20 +256,58 @@ const fullTitle = title.includes('DecayFix') ? title : `${title} | ${siteName}`;
     <!-- SEO Meta Tags -->
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
-    {noIndex && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="canonical" href={canonicalUrl} />
+    {noIndex ? (
+      <meta name="robots" content="noindex, nofollow" />
+    ) : (
+      <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    )}
 
-    <!-- Open Graph / Social -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content={canonical} />
+    <!-- Search Engine Webmaster Verification (Bing & Google) -->
+    {process.env.BING_SITE_VERIFICATION ? (
+      <meta name="msvalidate.01" content={process.env.BING_SITE_VERIFICATION} />
+    ) : (
+      <meta name="msvalidate.01" content="C0E783D8982352B880894567B78F046E" />
+    )}
+    {process.env.GOOGLE_SITE_VERIFICATION && (
+      <meta name="google-site-verification" content={process.env.GOOGLE_SITE_VERIFICATION} />
+    )}
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonicalUrl} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
-    <meta property="og:site_name" content={siteName} />
+    <meta property="og:site_name" content={`${siteName} by ${parentBrand}`} />
+    <meta property="og:image" content={resolvedOgImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={fullTitle} />
+    <meta property="og:locale" content="en_US" />
 
-    <!-- Twitter -->
+    {ogType === 'article' && publishedTime && (
+      <meta property="article:published_time" content={publishedTime} />
+    )}
+    {ogType === 'article' && modifiedTime && (
+      <meta property="article:modified_time" content={modifiedTime} />
+    )}
+    {ogType === 'article' && author && (
+      <meta property="article:author" content={author} />
+    )}
+
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@sprintlabsai" />
+    <meta name="twitter:creator" content="@sprintlabsai" />
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={resolvedOgImage} />
+    <meta name="twitter:image:alt" content={fullTitle} />
+
+    <!-- Structured Data (JSON-LD) -->
+    {schemas.map((schemaObj) => (
+      <script type="application/ld+json" set:html={JSON.stringify(schemaObj)} />
+    ))}
   </head>
   <body class="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white antialiased font-sans">
     <!-- Top Navigation -->
@@ -100,6 +333,7 @@ const fullTitle = title.includes('DecayFix') ? title : `${title} | ${siteName}`;
 
           <nav class="flex items-center gap-3 sm:gap-5 text-sm font-medium text-slate-300">
             <a href="/pricing" class="hover:text-white transition-colors">Pricing</a>
+            <a href="/blog" class="hover:text-white transition-colors">Blog</a>
             <a href="/contact" class="hover:text-white transition-colors">Contact</a>
             <a href="/support" class="hover:text-white transition-colors">Support</a>
             
@@ -199,10 +433,15 @@ const fullTitle = title.includes('DecayFix') ? title : `${title} | ${siteName}`;
           
           <div class="flex flex-wrap items-center gap-4 sm:gap-6 text-xs">
             <a href="/pricing" class="hover:text-slate-200 transition-colors">Pricing</a>
+            <a href="/blog" class="hover:text-slate-200 transition-colors">Blog</a>
+            <a href="/for/saas" class="hover:text-slate-200 transition-colors">For SaaS</a>
+            <a href="/for/ecommerce" class="hover:text-slate-200 transition-colors">For eCommerce</a>
+            <a href="/for/agencies" class="hover:text-slate-200 transition-colors">For Agencies</a>
+            <a href="/for/publishers" class="hover:text-slate-200 transition-colors">For Publishers</a>
             <a href="/contact" class="hover:text-slate-200 transition-colors">Contact</a>
             <a href="/support" class="hover:text-slate-200 transition-colors">Support</a>
-            <a href="/privacy" class="hover:text-slate-200 transition-colors">Privacy Policy</a>
-            <a href="/terms" class="hover:text-slate-200 transition-colors">Terms of Service</a>
+            <a href="/privacy" class="hover:text-slate-200 transition-colors">Privacy</a>
+            <a href="/terms" class="hover:text-slate-200 transition-colors">Terms</a>
             <a href="/admin" class="text-slate-500 hover:text-indigo-400 transition-colors font-medium">Admin Portal</a>
           </div>
         </div>

@@ -1,0 +1,194 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getEntry, getCollection, render } from 'astro:content';
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+if (!slug) {
+  return Astro.redirect('/blog');
+}
+
+const post = await getEntry('blog', slug);
+if (!post) {
+  return Astro.redirect('/blog');
+}
+
+const { Content } = await render(post);
+
+const datePublishedFormatted = new Date(post.data.datePublished).toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
+const dateModifiedFormatted = post.data.dateModified
+  ? new Date(post.data.dateModified).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  : datePublishedFormatted;
+
+// Related posts recommendations
+const allPosts = await getCollection('blog');
+const otherPosts = allPosts
+  .filter((p) => p.id !== slug)
+  .slice(0, 3);
+---
+
+<BaseLayout
+  title={post.data.title}
+  description={post.data.description}
+  ogType="article"
+  publishedTime={post.data.datePublished}
+  modifiedTime={post.data.dateModified || post.data.datePublished}
+  author={post.data.author}
+  breadcrumbs={[
+    { name: 'Home', url: '/' },
+    { name: 'Blog', url: '/blog' },
+    { name: post.data.title, url: `/blog/${slug}` },
+  ]}
+  faqs={post.data.faqs}
+  article={{
+    headline: post.data.title,
+    description: post.data.description,
+    datePublished: post.data.datePublished,
+    dateModified: post.data.dateModified || post.data.datePublished,
+    author: post.data.author,
+  }}
+>
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+    <!-- Breadcrumbs Display -->
+    <nav class="flex items-center gap-2 text-xs text-slate-500 mb-8 overflow-x-auto whitespace-nowrap pb-2">
+      <a href="/" class="hover:text-slate-300 transition-colors">Home</a>
+      <span>/</span>
+      <a href="/blog" class="hover:text-slate-300 transition-colors">Blog</a>
+      <span>/</span>
+      <span class="text-slate-400 font-medium truncate max-w-xs sm:max-w-md">{post.data.title}</span>
+    </nav>
+
+    <!-- Post Header -->
+    <header class="mb-12 border-b border-slate-800 pb-10">
+      <div class="flex items-center gap-3 text-xs mb-4">
+        <span class="px-2.5 py-1 rounded-full bg-indigo-950/80 border border-indigo-500/30 text-indigo-300 font-semibold text-[11px]">
+          {post.data.category}
+        </span>
+        <span class="text-slate-500">•</span>
+        <span class="text-slate-400">Published: {datePublishedFormatted}</span>
+        {post.data.dateModified && (
+          <>
+            <span class="text-slate-500">•</span>
+            <span class="text-sky-400 font-medium">Updated: {dateModifiedFormatted}</span>
+          </>
+        )}
+      </div>
+
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight mb-6">
+        {post.data.title}
+      </h1>
+
+      <p class="text-slate-300 text-base sm:text-lg leading-relaxed mb-6 font-normal">
+        {post.data.description}
+      </p>
+
+      <div class="flex items-center gap-3 pt-4 border-t border-slate-800/60 text-xs text-slate-400">
+        <div class="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 flex items-center justify-center font-bold text-xs">
+          ⚡
+        </div>
+        <div>
+          <span class="font-bold text-white block">{post.data.author}</span>
+          <span class="text-[11px] text-slate-500">DecayFix Search Intelligence Lab</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Post Body Content -->
+    <article class="prose prose-invert prose-slate max-w-none text-slate-300 text-sm sm:text-base leading-relaxed mb-16 space-y-6">
+      <Content />
+    </article>
+
+    <!-- In-Article FAQ Section if available -->
+    {post.data.faqs && post.data.faqs.length > 0 && (
+      <div class="my-16 p-6 sm:p-8 rounded-2xl border border-slate-800 bg-slate-900/60">
+        <div class="flex items-center gap-2 text-xs font-bold text-sky-400 uppercase tracking-wider mb-2">
+          <span>Direct Answers</span>
+        </div>
+        <h3 class="text-xl sm:text-2xl font-bold text-white mb-6">
+          Frequently Asked Questions About This Topic
+        </h3>
+        <div class="space-y-4">
+          {post.data.faqs.map((faq) => (
+            <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800/80">
+              <h4 class="font-bold text-white text-sm sm:text-base mb-1.5 flex items-start gap-2">
+                <span class="text-sky-400 font-black">Q:</span>
+                <span>{faq.question}</span>
+              </h4>
+              <p class="text-slate-300 text-xs sm:text-sm leading-relaxed pl-6">
+                {faq.answer}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    <!-- Interactive Soft CTA Banner -->
+    <div class="rounded-2xl bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-900 border border-indigo-500/40 p-8 text-center my-16 shadow-2xl relative overflow-hidden">
+      <div class="absolute -top-12 -right-12 w-36 h-36 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
+      
+      <span class="text-xs font-bold uppercase tracking-wider text-sky-400 mb-2 block">
+        Free Traffic Decay Diagnostic
+      </span>
+      <h3 class="text-2xl font-extrabold text-white mb-3">
+        Find Out Which Pages on Your Site Are Losing Traffic
+      </h3>
+      <p class="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto mb-6 leading-relaxed">
+        Connect Google Search Console in 10 seconds. DecayFix analyzes your 16-month traffic baseline to pinpoint your top 5 decaying URLs with instant AI refresh instructions.
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <a
+          href="/login"
+          class="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 transition-all hover:scale-105"
+        >
+          Connect Search Console Free →
+        </a>
+        <a
+          href="/pricing"
+          class="w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs sm:text-sm font-semibold transition-all"
+        >
+          View Pro Pricing (₹999/mo)
+        </a>
+      </div>
+    </div>
+
+    <!-- Related Articles -->
+    {otherPosts.length > 0 && (
+      <div class="border-t border-slate-800 pt-12">
+        <h3 class="text-xl font-bold text-white mb-6">Related SEO Guides & Research</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {otherPosts.map((p) => (
+            <a
+              href={`/blog/${p.id}`}
+              class="p-4 rounded-xl border border-slate-800 bg-slate-900/40 hover:border-indigo-500 transition-colors flex flex-col justify-between group"
+            >
+              <div>
+                <span class="text-[10px] font-semibold text-indigo-400 uppercase tracking-wider block mb-1">
+                  {p.data.category}
+                </span>
+                <h4 class="font-bold text-white text-xs group-hover:text-sky-300 transition-colors line-clamp-2 mb-2">
+                  {p.data.title}
+                </h4>
+              </div>
+              <span class="text-[11px] text-sky-400 font-semibold group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-1">
+                <span>Read</span>
+                <span>→</span>
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+</BaseLayout>

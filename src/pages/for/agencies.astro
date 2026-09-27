@@ -1,0 +1,188 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getSession } from '@/lib/session';
+
+export const prerender = false;
+
+const session = await getSession(Astro.request);
+const isAuthenticated = !!session?.user?.id;
+
+const agencyFaqs = [
+  {
+    question: 'How do agencies sell content refresh retainers with DecayFix?',
+    answer: 'Agencies connect client Search Console accounts to generate immediate content decay roadmaps. Instead of selling speculative new content, agencies offer $1,500–$3,500/mo refresh retainers that deliver fast, verifiable ranking improvements.',
+  },
+  {
+    question: 'How long does a client decay audit take to prepare?',
+    answer: 'DecayFix pulls and analyzes Search Console data automatically in under 60 seconds. You receive prioritized decaying URLs with Claude AI refresh instructions ready to assign to writers.',
+  },
+  {
+    question: 'Can I manage multiple client domains under one subscription?',
+    answer: 'Yes. Any domain you have Google Search Console access to can be analyzed seamlessly.',
+  },
+];
+---
+
+<BaseLayout
+  title="Content Decay Tool for SEO Agencies & Freelancers"
+  description="Deliver automated content refresh retainers. DecayFix connects to client Search Console properties to build instant decay audits with AI action playbooks."
+  breadcrumbs={[
+    { name: 'Home', url: '/' },
+    { name: 'Solutions', url: '/#audience' },
+    { name: 'Agencies & Freelancers', url: '/for/agencies' },
+  ]}
+  faqs={agencyFaqs}
+>
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+    <!-- Hero -->
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/30 text-xs font-semibold text-indigo-300 mb-6 shadow-sm">
+        <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+        Built for SEO Agencies, Consultants & Freelancers
+      </div>
+
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight mb-6">
+        Turn Client Content Decay into <span class="bg-gradient-to-r from-sky-400 via-indigo-300 to-rose-400 bg-clip-text text-transparent">High-Margin Retainers</span>
+      </h1>
+
+      <p class="text-slate-300 text-base sm:text-lg leading-relaxed mb-8">
+        Stop spending 10+ hours per client digging through Google Search Console spreadsheets. DecayFix instantly pinpoints every decaying URL across client domains and generates AI refresh playbooks your team can execute immediately.
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        {isAuthenticated ? (
+          <a
+            href="/dashboard"
+            class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105"
+          >
+            Launch Agency Dashboard →
+          </a>
+        ) : (
+          <a
+            href="/login"
+            class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105"
+          >
+            Scan Client Site Free →
+          </a>
+        )}
+        <a
+          href="/pricing"
+          class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold text-sm transition-all"
+        >
+          View Pricing (₹999/mo)
+        </a>
+      </div>
+    </div>
+
+    <!-- Agency Value Props -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold text-lg">
+          ⚡
+        </div>
+        <h3 class="font-bold text-white text-base">Instant Audit Generation</h3>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Connect a prospective or current client's Search Console and generate a full content decay audit in under 60 seconds.
+        </p>
+      </div>
+
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-lg">
+          💰
+        </div>
+        <h3 class="font-bold text-white text-base">High-Margin Retainer Upsell</h3>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Package monthly decay audits into $1,500–$3,500/mo content refresh retainers with ready-made AI editorial playbooks.
+        </p>
+      </div>
+
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold text-lg">
+          📊
+        </div>
+        <h3 class="font-bold text-white text-base">Verifiable Client ROI</h3>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Prove agency value quickly by showing clients reclaimed organic clicks and ranking recoveries on existing assets.
+        </p>
+      </div>
+    </div>
+
+    <!-- Features for Agencies -->
+    <div class="p-8 sm:p-10 rounded-3xl border border-indigo-500/30 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/40 mb-20 space-y-8">
+      <div class="max-w-2xl">
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-3">
+          Automate Client SEO Diagnostics
+        </h2>
+        <p class="text-slate-300 text-sm leading-relaxed">
+          Replace tedious manual spreadsheets with an automated decay detection engine.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> 16-Month Client Baseline
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Pulls maximum historical Search Console depth to establish accurate pre-decay benchmarks.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> Ready-to-Assign Playbooks
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Pass AI refresh recommendations directly to your copywriters to streamline the editorial update process.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> Unlimited Re-analyses
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Re-run audits at any time during client monthly reporting calls to verify ranking progress.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> Highly Affordable Pro Tier
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            DecayFix Pro costs just ₹999/month (~$12 USD), making client margins exceptionally strong.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agency Guides -->
+    <div class="border-t border-slate-800 pt-16 mb-20">
+      <h3 class="text-xl font-bold text-white mb-6">Agency SEO Strategy Resources</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        <a href="/blog/best-content-decay-detection-tools-2026" class="p-4 rounded-xl border border-slate-800 bg-slate-900/40 hover:border-indigo-500 transition-colors block">
+          <div class="font-bold text-white mb-1">Best Content Decay Detection Tools in 2026 →</div>
+          <div class="text-slate-400">Compare leading audit platforms for agency client deliverables.</div>
+        </a>
+        <a href="/blog/decayfix-vs-traditional-seo-rank-trackers" class="p-4 rounded-xl border border-slate-800 bg-slate-900/40 hover:border-indigo-500 transition-colors block">
+          <div class="font-bold text-white mb-1">DecayFix vs Traditional Rank Trackers →</div>
+          <div class="text-slate-400">Learn how GSC decay auditing complements keyword rank tracking.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="border-t border-slate-800 pt-16">
+      <h2 class="text-2xl font-bold text-white mb-8 text-center">Frequently Asked Questions</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+        {agencyFaqs.map((faq) => (
+          <div class="p-5 rounded-xl border border-slate-800 bg-slate-900/50">
+            <h3 class="font-bold text-white mb-2">{faq.question}</h3>
+            <p class="text-slate-400 leading-relaxed">{faq.answer}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</BaseLayout>

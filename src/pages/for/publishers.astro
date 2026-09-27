@@ -1,0 +1,188 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getSession } from '@/lib/session';
+
+export const prerender = false;
+
+const session = await getSession(Astro.request);
+const isAuthenticated = !!session?.user?.id;
+
+const publisherFaqs = [
+  {
+    question: 'How does content decay affect digital publishers and media sites?',
+    answer: 'Publishers rely on organic traffic volume to generate programmatic ad impressions (RPM) and affiliate revenue. When hundreds of evergreen articles slowly decay, total domain impressions drop and monetization suffers.',
+  },
+  {
+    question: 'Can DecayFix handle publications with thousands of published URLs?',
+    answer: 'Yes. DecayFix connects to Google Search Console via official API and processes your entire historical index, surfacing all URLs experiencing a 20%+ decline sorted by absolute clicks lost.',
+  },
+  {
+    question: 'Does DecayFix require any scripts on our CMS (WordPress, Ghost, etc.)?',
+    answer: 'No. DecayFix operates 100% via Google Search Console OAuth. Zero plugins, zero scripts, and zero impact on your Core Web Vitals or page load speed.',
+  },
+];
+---
+
+<BaseLayout
+  title="Publisher Content Decay Tool — Protect Media Traffic"
+  description="Audit thousands of editorial articles for content decay. DecayFix scans 16-month Search Console baselines to protect media traffic and ad revenue."
+  breadcrumbs={[
+    { name: 'Home', url: '/' },
+    { name: 'Solutions', url: '/#audience' },
+    { name: 'Publishers & Media', url: '/for/publishers' },
+  ]}
+  faqs={publisherFaqs}
+>
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+    <!-- Hero -->
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/30 text-xs font-semibold text-indigo-300 mb-6 shadow-sm">
+        <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+        Built for Digital Publishers, Media Brands & Newsrooms
+      </div>
+
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight mb-6">
+        Defend High-RPM Publisher Traffic Against <span class="bg-gradient-to-r from-sky-400 via-indigo-300 to-rose-400 bg-clip-text text-transparent">Content Decay</span>
+      </h1>
+
+      <p class="text-slate-300 text-base sm:text-lg leading-relaxed mb-8">
+        Your evergreen editorial library drives millions of ad impressions and affiliate clicks. When older articles silently bleed search rankings, programmatic RPM revenue drops. DecayFix scans thousands of articles across a 16-month baseline to pinpoint decaying URLs.
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        {isAuthenticated ? (
+          <a
+            href="/dashboard"
+            class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105"
+          >
+            Launch Publisher Dashboard →
+          </a>
+        ) : (
+          <a
+            href="/login"
+            class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105"
+          >
+            Connect Search Console Free →
+          </a>
+        )}
+        <a
+          href="/pricing"
+          class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold text-sm transition-all"
+        >
+          View Pricing (₹999/mo)
+        </a>
+      </div>
+    </div>
+
+    <!-- Publisher Pain Points -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold text-lg">
+          📚
+        </div>
+        <h3 class="font-bold text-white text-base">Massive Archive Scale</h3>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Tracking traffic erosion manually across 500+ or 5,000+ articles in Search Console spreadsheets is physically impossible for editorial teams.
+        </p>
+      </div>
+
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 font-bold text-lg">
+          📉
+        </div>
+        <h3 class="font-bold text-white text-base">Silent Ad RPM Erosion</h3>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          When high-RPM evergreen guides lose rankings, programmatic display and affiliate revenues drop even if homepage traffic looks stable.
+        </p>
+      </div>
+
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 font-bold text-lg">
+          🤖
+        </div>
+        <h3 class="font-bold text-white text-base">AI Overviews Impact</h3>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Google AI Overviews frequently summarize simple definitional articles, requiring publishers to upgrade content with proprietary research.
+        </p>
+      </div>
+    </div>
+
+    <!-- How DecayFix Supports Publishers -->
+    <div class="p-8 sm:p-10 rounded-3xl border border-indigo-500/30 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/40 mb-20 space-y-8">
+      <div class="max-w-2xl">
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-3">
+          Scale Editorial Optimization Across Your Entire Site
+        </h2>
+        <p class="text-slate-300 text-sm leading-relaxed">
+          Arm your newsroom and editorial leads with automated decay detection.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> Automated Archive Scans
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Scans every indexed URL in your Search Console property across a 16-month historical baseline.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> Absolute Clicks Lost Sorting
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Prioritizes URLs losing the most raw traffic volume so writers fix the highest-traffic articles first.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> Fast AI Refresh Playbooks
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Delivers concise 2–4 sentence instructions for every post to guide rapid editorial updates.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> Zero Script Overhead
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Maintains 100% Core Web Vitals speed scores with pure API-based Search Console integration.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Publisher SEO Guides -->
+    <div class="border-t border-slate-800 pt-16 mb-20">
+      <h3 class="text-xl font-bold text-white mb-6">Publisher SEO & AEO Strategy</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        <a href="/blog/how-ai-overviews-and-zero-click-search-affect-blog-traffic-2026" class="p-4 rounded-xl border border-slate-800 bg-slate-900/40 hover:border-indigo-500 transition-colors block">
+          <div class="font-bold text-white mb-1">How AI Overviews Affect Blog Traffic in 2026 →</div>
+          <div class="text-slate-400">Adapt your editorial strategy for zero-click search and AI answer engines.</div>
+        </a>
+        <a href="/blog/how-often-should-you-update-old-blog-posts-for-seo" class="p-4 rounded-xl border border-slate-800 bg-slate-900/40 hover:border-indigo-500 transition-colors block">
+          <div class="font-bold text-white mb-1">How Often Should You Update Old Blog Posts? →</div>
+          <div class="text-slate-400">Establish optimal refresh cadences across high-volume editorial archives.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="border-t border-slate-800 pt-16">
+      <h2 class="text-2xl font-bold text-white mb-8 text-center">Frequently Asked Questions</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+        {publisherFaqs.map((faq) => (
+          <div class="p-5 rounded-xl border border-slate-800 bg-slate-900/50">
+            <h3 class="font-bold text-white mb-2">{faq.question}</h3>
+            <p class="text-slate-400 leading-relaxed">{faq.answer}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</BaseLayout>

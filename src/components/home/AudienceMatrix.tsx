@@ -5,6 +5,7 @@ const AUDIENCES = [
   {
     id: 'saas',
     title: 'SaaS & Tech Companies',
+    href: '/for/saas',
     icon: Laptop,
     badge: 'High-Intent Revenue',
     subtitle: 'Protect bottom-of-funnel rankings that drive software trials & demos.',
@@ -18,6 +19,7 @@ const AUDIENCES = [
   {
     id: 'ecom',
     title: 'eCommerce & D2C Stores',
+    href: '/for/ecommerce',
     icon: ShoppingBag,
     badge: 'Direct Sales Defense',
     subtitle: 'Keep product roundups, gift guides, and buying guides ranking on Page 1.',
@@ -31,6 +33,7 @@ const AUDIENCES = [
   {
     id: 'agency',
     title: 'SEO Agencies & Freelancers',
+    href: '/for/agencies',
     icon: Briefcase,
     badge: 'Automated Client Upsells',
     subtitle: 'Deliver high-margin Content Refresh Retainers in 30 seconds.',
@@ -44,12 +47,13 @@ const AUDIENCES = [
   {
     id: 'publishers',
     title: 'Publishers & Media Sites',
+    href: '/for/publishers',
     icon: Newspaper,
     badge: 'Scale & Traffic Defense',
     subtitle: 'Monitor thousands of articles effortlessly without messy spreadsheets.',
     points: [
       'Automated 16-month historical baseline scans identify drops across massive content archives.',
-      'Receive Monday morning watchdog digests alerting your editorial team to decaying URLs.',
+      'Receive automated watchdog digests alerting your editorial team to decaying URLs.',
       'Maintain overall domain authority and protect high-RPM programmatic ad impressions.',
     ],
     metric: 'Automates 20+ hours/week of manual GSC data extraction.',
@@ -113,9 +117,18 @@ export default function AudienceMatrix() {
       <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/30 border border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-8 animate-fadeIn">
         <div className="space-y-4 max-w-xl">
           <div>
-            <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
-              {activeAudience.badge}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+                {activeAudience.badge}
+              </span>
+              <a
+                href={activeAudience.href}
+                className="text-xs text-sky-400 hover:underline font-semibold flex items-center gap-1"
+              >
+                <span>View Full Industry Solution</span>
+                <ArrowRight className="w-3 h-3" />
+              </a>
+            </div>
             <h4 className="text-xl sm:text-2xl font-bold text-white mt-1">
               {activeAudience.subtitle}
             </h4>
@@ -141,13 +154,21 @@ export default function AudienceMatrix() {
               "{activeAudience.metric}"
             </p>
           </div>
-          <a
-            href="/login"
-            className="inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-xs shadow-lg shadow-indigo-600/25 transition-all hover:scale-105 whitespace-nowrap"
-          >
-            <span>Scan {activeAudience.title} Site</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </a>
+          <div className="space-y-2">
+            <a
+              href="/login"
+              className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-xs shadow-lg shadow-indigo-600/25 transition-all hover:scale-105 whitespace-nowrap"
+            >
+              <span>Scan {activeAudience.title} Site</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </a>
+            <a
+              href={activeAudience.href}
+              className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 text-[11px] font-medium transition-colors"
+            >
+              <span>Read {activeAudience.title} Guide →</span>
+            </a>
+          </div>
         </div>
       </div>
     </div>

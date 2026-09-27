@@ -1,0 +1,36 @@
+# DecayFix
+
+> AI-Powered Content Decay Detection and Search Traffic Recovery Engine for Google Search Console.
+
+## Overview
+DecayFix (developed by SprintLabs.ai) is a web-based analytics and content optimization tool that connects directly to Google Search Console via official read-only OAuth API. It automatically detects web pages and blog posts experiencing "content decay" — defined as a sustained 20% or greater decline in organic clicks or impressions compared to historical baselines.
+
+DecayFix identifies whether traffic loss is caused by keyword ranking erosion, click-through-rate (CTR) collapse, or seasonal variation, and generates tailored AI-driven editorial refresh action plans to help content teams recover lost search rankings.
+
+## Key Capabilities & Features
+- **Zero-Friction Google Search Console Connection**: Connects in seconds using Google OAuth with read-only permissions (`webmasters.readonly`). No tracking scripts, plugins, or DNS modifications required.
+- **Automated Historical Baseline Comparison**: Analyzes performance trends across up to 16 months of historical Search Console data to distinguish true content decay from short-term fluctuation.
+- **20%+ Traffic Drop Detection**: Automatically pinpoints and ranks URLs suffering significant traffic erosion, sorting them by absolute organic clicks lost to prioritize highest-ROI content updates.
+- **CTR-Collapse vs Ranking-Drop Diagnostics**: Separates pages losing impressions (ranking loss/relevance shifts) from pages maintaining impressions but losing clicks (CTR collapse/title tag degradation).
+- **AI Refresh Action Playbooks**: Produces concise, 2-to-4 sentence editorial directives for each decaying URL, pinpointing missing keywords, outdated statistics, and structural improvements.
+- **Continuous Monitoring**: Tracks ongoing URL performance, allowing content teams to verify whether content refreshes successfully restored search traffic.
+
+## Pricing Structure
+- **Free Diagnostic Preview ($0)**: Includes full Google Search Console connection, domain baseline analysis, and full diagnostics for the top 5 decaying URLs with AI refresh playbooks.
+- **Pro Monthly Subscription (₹999 / month)**: Unlocks 100% of all decaying URLs across the connected domain, unlimited ongoing re-analyses, continuous traffic monitoring, and full AI refresh playbooks. Backed by a 7-day 100% money-back guarantee.
+
+## Target Audiences
+- **SaaS & Tech Companies**: Protect high-intent bottom-of-funnel comparison posts, feature guides, and product tutorials from competitor displacement.
+- **eCommerce & D2C Brands**: Maintain organic rankings and revenue for high-converting buying guides, gift roundups, and product category articles.
+- **SEO Agencies & Freelancers**: Eliminate hours of manual Google Search Console spreadsheet exports and deliver instant content refresh roadmaps to clients.
+- **Publishers & Media Outlets**: Protect high-volume evergreen editorial archives and monitor editorial decay across thousands of articles.
+
+## Core Navigation & Resources
+- **Homepage**: https://decayfix.sprintlabsai.com/
+- **Pricing & Plans**: https://decayfix.sprintlabsai.com/pricing
+- **SaaS Solutions**: https://decayfix.sprintlabsai.com/for/saas
+- **eCommerce Solutions**: https://decayfix.sprintlabsai.com/for/ecommerce
+- **Agencies Solutions**: https://decayfix.sprintlabsai.com/for/agencies
+- **Publishers Solutions**: https://decayfix.sprintlabsai.com/for/publishers
+- **Blog & Knowledge Base**: https://decayfix.sprintlabsai.com/blog
+- **Contact & Support**: https://decayfix.sprintlabsai.com/contact

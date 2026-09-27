@@ -14,11 +14,34 @@ if (user?.id || user?.email) {
   const entitlement = await checkSiteUnlockStatus(user.id || '', null, user.email || undefined);
   isUnlocked = entitlement.isUnlocked;
 }
+const pricingFaqs = [
+  {
+    question: 'How does the monthly subscription work?',
+    answer: 'DecayFix Pro is a ₹999/month subscription. You get ongoing continuous monitoring of all decaying pages, automated weekly health checks, query drop alerts, and unlimited AI refresh playbooks. You can cancel anytime with a single click.',
+  },
+  {
+    question: 'How does DecayFix access my Search Console?',
+    answer: 'When you sign in with Google, we request the official read-only scope (webmasters.readonly). We cannot modify your site or settings.',
+  },
+  {
+    question: 'What is the 20% decay threshold?',
+    answer: 'We compare your recent 8-week period against its previous 8-week baseline. Any post that suffered a 20% or greater decline in clicks or impressions is flagged.',
+  },
+  {
+    question: 'Can I re-analyze my site later?',
+    answer: 'Yes! Once you unlock your site, you can click "Analyze my site" whenever you want to pull fresh numbers without paying again.',
+  },
+];
 ---
 
 <BaseLayout
-  title="Pricing — Simple, Predictable Monthly Subscription"
-  description="DecayFix pricing: Free preview for your top 5 decaying blog posts, or ₹999/month Pro subscription to continuously monitor all decaying URLs and Claude AI recommendations."
+  title="Pricing — DecayFix Content Decay Detection Plans"
+  description="Simple pricing for content teams. Free preview for top 5 decaying pages or ₹999/mo Pro subscription for continuous site-wide traffic monitoring."
+  breadcrumbs={[
+    { name: 'Home', url: '/' },
+    { name: 'Pricing', url: '/pricing' },
+  ]}
+  faqs={pricingFaqs}
 >
   <div class="max-w-4xl mx-auto px-4 sm:px-6 py-20">
     <div class="text-center max-w-2xl mx-auto mb-16">

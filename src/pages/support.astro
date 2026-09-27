@@ -10,8 +10,12 @@ const user = session?.user;
 ---
 
 <BaseLayout
-  title="Help Desk & Support Ticket — DecayFix"
-  description="Submit a support ticket or request assistance with Google Search Console connection, decay calculations, or AI action plans."
+  title="Support & Help Desk — DecayFix Assistance"
+  description="Submit a support ticket for Search Console connectivity, traffic drop diagnostics, or AI action playbook guidance."
+  breadcrumbs={[
+    { name: 'Home', url: '/' },
+    { name: 'Support', url: '/support' },
+  ]}
 >
   <div class="max-w-2xl mx-auto px-4 sm:px-6 py-16">
     <div class="text-center max-w-xl mx-auto mb-10">

@@ -1,0 +1,188 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getSession } from '@/lib/session';
+
+export const prerender = false;
+
+const session = await getSession(Astro.request);
+const isAuthenticated = !!session?.user?.id;
+
+const saasFaqs = [
+  {
+    question: 'Why do SaaS blog posts and comparison pages decay so quickly?',
+    answer: 'SaaS search queries evolve rapidly because competitors constantly release new features, update pricing, and publish new comparison pages. When your "Alternative to [Competitor]" post mentions outdated features, conversion rates drop and Google re-ranks newer articles.',
+  },
+  {
+    question: 'How does DecayFix help SaaS marketing and growth teams?',
+    answer: 'DecayFix connects to your Google Search Console in seconds, audits your 16-month traffic baseline, and pinpoints which high-intent product guides or comparison posts are losing trial-driving rankings, complete with AI refresh playbooks.',
+  },
+  {
+    question: 'Can DecayFix track traffic drops on gated product pages?',
+    answer: 'DecayFix tracks all public URLs indexed by Google Search Console, including product landing pages, integration directories, help docs, and top-of-funnel blog posts.',
+  },
+];
+---
+
+<BaseLayout
+  title="Content Decay Tool for SaaS — Recover Blog Rankings"
+  description="Protect high-intent SaaS rankings. DecayFix connects to Google Search Console to detect decaying competitor comparison blogs and software demo funnels."
+  breadcrumbs={[
+    { name: 'Home', url: '/' },
+    { name: 'Solutions', url: '/#audience' },
+    { name: 'SaaS & Tech', url: '/for/saas' },
+  ]}
+  faqs={saasFaqs}
+>
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+    <!-- Hero -->
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/30 text-xs font-semibold text-indigo-300 mb-6 shadow-sm">
+        <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+        Built for SaaS, Tech & Cloud Products
+      </div>
+
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight mb-6">
+        Stop Losing High-Intent SaaS Trial Signups to <span class="bg-gradient-to-r from-sky-400 via-indigo-300 to-rose-400 bg-clip-text text-transparent">Content Decay</span>
+      </h1>
+
+      <p class="text-slate-300 text-base sm:text-lg leading-relaxed mb-8">
+        Your "Best Alternatives" and "Product vs Competitor" blog posts drive 90%+ of your organic software trials. When those URLs silently lose rankings, customer acquisition costs spike. DecayFix detects the drop and provides AI recovery playbooks.
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        {isAuthenticated ? (
+          <a
+            href="/dashboard"
+            class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105"
+          >
+            Open Your Dashboard →
+          </a>
+        ) : (
+          <a
+            href="/login"
+            class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-sky-500 hover:from-indigo-500 hover:to-sky-400 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105"
+          >
+            Connect Search Console Free →
+          </a>
+        )}
+        <a
+          href="/pricing"
+          class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold text-sm transition-all"
+        >
+          View Pro Pricing (₹999/mo)
+        </a>
+      </div>
+    </div>
+
+    <!-- Core SaaS Pain Points -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 font-bold text-lg">
+          📉
+        </div>
+        <h3 class="font-bold text-white text-base">Competitor Comparison Bleed</h3>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Competitors constantly update their landing pages and publish new comparison articles targeting your brand name and core category keywords.
+        </p>
+      </div>
+
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-lg">
+          ⚠️
+        </div>
+        <h3 class="font-bold text-white text-base">Obsolete Feature & Pricing Docs</h3>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          When your product team ships new releases, older feature breakdown articles become inaccurate, causing bounce rates to jump and rankings to slip.
+        </p>
+      </div>
+
+      <div class="p-6 rounded-2xl border border-slate-800 bg-slate-900/60 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold text-lg">
+          💸
+        </div>
+        <h3 class="font-bold text-white text-base">Paid CAC Inflation</h3>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Every high-intent organic ranking lost to content decay forces your team to buy expensive Google Ads clicks on the exact same keywords.
+        </p>
+      </div>
+    </div>
+
+    <!-- How DecayFix Fixes SaaS Content Decay -->
+    <div class="p-8 sm:p-10 rounded-3xl border border-indigo-500/30 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/40 mb-20 space-y-8">
+      <div class="max-w-2xl">
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-3">
+          How DecayFix Restores SaaS Organic Traffic
+        </h2>
+        <p class="text-slate-300 text-sm leading-relaxed">
+          Continuous monitoring designed to fit into your weekly growth and product marketing sprints.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> 16-Month Historical Baselines
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Eliminates false positives by comparing recent traffic against 16 months of historical performance data.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> Tactical Claude AI Action Playbooks
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Gives your content team exact 2–4 sentence directives detailing missing keywords, outdated metrics, and intent shifts.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> Zero Tracking Code Overhead
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Connects strictly via Google Search Console OAuth. Zero scripts, zero speed impact on your app or marketing site.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div class="text-sm font-bold text-white flex items-center gap-2">
+            <span class="text-emerald-400">✓</span> Free Diagnostic Preview
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Audit your top 5 decaying SaaS URLs instantly for free before upgrading to unlimited monthly monitoring.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Related SaaS SEO Guides -->
+    <div class="border-t border-slate-800 pt-16 mb-20">
+      <h3 class="text-xl font-bold text-white mb-6">Essential Reading for SaaS Content Teams</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        <a href="/blog/why-is-my-blog-post-losing-google-traffic" class="p-4 rounded-xl border border-slate-800 bg-slate-900/40 hover:border-indigo-500 transition-colors block">
+          <div class="font-bold text-white mb-1">Why Is My Blog Post Losing Google Traffic? →</div>
+          <div class="text-slate-400">Learn the 4 core scenarios behind single-page traffic drops.</div>
+        </a>
+        <a href="/blog/how-to-fix-a-page-losing-clicks-keeping-impressions" class="p-4 rounded-xl border border-slate-800 bg-slate-900/40 hover:border-indigo-500 transition-colors block">
+          <div class="font-bold text-white mb-1">How to Fix a Page Losing Clicks but Keeping Impressions →</div>
+          <div class="text-slate-400">Reclaim CTR collapse on bottom-of-funnel SaaS comparison guides.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="border-t border-slate-800 pt-16">
+      <h2 class="text-2xl font-bold text-white mb-8 text-center">Frequently Asked Questions</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+        {saasFaqs.map((faq) => (
+          <div class="p-5 rounded-xl border border-slate-800 bg-slate-900/50">
+            <h3 class="font-bold text-white mb-2">{faq.question}</h3>
+            <p class="text-slate-400 leading-relaxed">{faq.answer}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</BaseLayout>
