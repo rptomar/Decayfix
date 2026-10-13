@@ -10,5 +10,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return context.redirect(destination, 301);
   }
 
+  // Redirect legacy sitemap paths to the canonical sitemap.xml
+  if (url.pathname === '/sitemap-index.xml' || url.pathname === '/sitemap-0.xml') {
+    return context.redirect('/sitemap.xml', 301);
+  }
+
   return next();
 });
