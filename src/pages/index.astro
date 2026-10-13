@@ -38,7 +38,38 @@ const homeFaqs = [
     question: 'How often should you refresh old blog content?',
     answer: 'Content teams should run a decay audit every 30 to 90 days. High-impact commercial posts should be reviewed quarterly to update statistics, fix broken links, and align with new search queries.',
   },
-];
+const howToSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'How to Detect and Fix Content Decay in Google Search Console',
+  description: 'A 4-step framework to identify blog posts with 20%+ traffic drops using Google Search Console and recover organic search rankings.',
+  step: [
+    {
+      '@type': 'HowToStep',
+      name: 'Connect Google Search Console',
+      text: 'Authorize read-only access to your Google Search Console property to pull 16-month historical traffic baselines.',
+      url: 'https://decayfix.sprintlabsai.com/#features',
+    },
+    {
+      '@type': 'HowToStep',
+      name: 'Isolate Decaying URLs with 20%+ Traffic Loss',
+      text: 'Compare the last 8-week period against its previous baseline to filter out short-term fluctuations and identify URLs suffering true ranking or CTR decay.',
+      url: 'https://decayfix.sprintlabsai.com/#features',
+    },
+    {
+      '@type': 'HowToStep',
+      name: 'Diagnose Ranking Loss vs CTR Collapse',
+      text: 'Separate URLs losing impressions (ranking drop) from URLs maintaining impressions but losing clicks (title tag degradation or AI Overviews).',
+      url: 'https://decayfix.sprintlabsai.com/#features',
+    },
+    {
+      '@type': 'HowToStep',
+      name: 'Execute AI Refresh Playbooks & Request Recrawl',
+      text: 'Apply editorial updates targeting missing queries, fresh 2026 data, and updated schemas, then submit for immediate re-indexing in Search Console.',
+      url: 'https://decayfix.sprintlabsai.com/#features',
+    },
+  ],
+};
 ---
 
 <BaseLayout
@@ -47,6 +78,7 @@ const homeFaqs = [
   softwareApp={true}
   breadcrumbs={[{ name: 'Home', url: '/' }]}
   faqs={homeFaqs}
+  customSchema={howToSchema}
 >
   <!-- 1. Hero Section with Animated Typewriter -->
   <section class="relative overflow-hidden pt-20 pb-24 px-4 sm:px-6">
