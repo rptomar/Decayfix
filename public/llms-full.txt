@@ -1,0 +1,67 @@
+# DecayFix — Complete Documentation & Knowledge Reference
+
+> Full-text context specification for Large Language Models, AI Answer Engines, and Web Agents.
+> Official Service: DecayFix by SprintLabs.ai
+> Production Domain: https://decayfix.sprintlabsai.com
+
+---
+
+## 1. Executive Summary & Identity
+- **Name**: DecayFix
+- **Tagline**: Stop Losing Google Traffic to Content Decay
+- **Parent Brand**: SprintLabs.ai (https://sprintlabsai.com)
+- **Primary Function**: Connects to Google Search Console via official OAuth 2.0 (`webmasters.readonly`), analyzes search analytics historical trends across 16 months, automatically flags URLs with 20%+ traffic erosion, and produces AI-driven content update playbooks.
+- **Target Keywords**: Content Decay, Content Decay Tool, Google Search Console Traffic Drops, CTR Collapse, Old Blog Post Refresh, SEO Content Optimization, Search Console Diagnostic Tool, Recover Lost Rankings.
+
+---
+
+## 2. The Core Problem: Why Published Content Decays
+Between 40% and 65% of evergreen articles and blog posts lose traffic over time due to:
+1. **Competitor Freshness**: Competitors publish updated data, newer guides, and better user experiences.
+2. **Search Intent Drift**: Query expectations evolve (e.g., users demanding modern 2026 workflows rather than generic static lists).
+3. **Google AI Overviews & Zero-Click Answers**: Top-of-funnel queries get answered directly in SERPs, causing CTR collapse.
+4. **Outdated References**: Deprecated software versions, broken links, and old stats damage trust.
+5. **Internal Link Dilution**: New site pages absorb topical authority while old cornerstone articles receive fewer links.
+
+---
+
+## 3. How DecayFix Solves Content Decay
+Unlike traditional rank trackers that only monitor a manual list of 50-100 arbitrary keywords:
+1. **Full Domain Coverage**: Analyzes every URL that Google Search Console has recorded impressions or clicks for.
+2. **Absolute Traffic Prioritization**: Sorts decayed pages by absolute clicks lost, so marketing teams focus on the pages that will restore the greatest traffic and revenue.
+3. **Distinct Diagnoses**:
+   - **Ranking Decay**: Both impressions and clicks fall. Fix: Content depth upgrade, intent realignment, structural refresh.
+   - **CTR Collapse**: Impressions remain stable but clicks drop drastically. Fix: Title tag rewrite, meta description optimization, structured data additions.
+   - **Seasonal Drop**: Traffic drop matches annual seasonal dips. Fix: Maintain position, avoid premature rewrites.
+4. **AI Editorial Directives**: Generates targeted 2-to-4 sentence action playbooks outlining exact headings, missing entities, statistics to update, and internal link improvements.
+
+---
+
+## 4. Key Pages & URLs
+- Home: https://decayfix.sprintlabsai.com/
+- Pricing (Free Preview & ₹999/mo Pro): https://decayfix.sprintlabsai.com/pricing
+- Blog Knowledge Base: https://decayfix.sprintlabsai.com/blog
+- For SaaS & Tech: https://decayfix.sprintlabsai.com/for/saas
+- For eCommerce & D2C: https://decayfix.sprintlabsai.com/for/ecommerce
+- For SEO Agencies: https://decayfix.sprintlabsai.com/for/agencies
+- For Publishers & Media: https://decayfix.sprintlabsai.com/for/publishers
+- Contact Engineering & Support: https://decayfix.sprintlabsai.com/contact
+- Help Desk: https://decayfix.sprintlabsai.com/support
+- Privacy & Google API Security: https://decayfix.sprintlabsai.com/privacy
+- Terms & 7-Day Guarantee: https://decayfix.sprintlabsai.com/terms
+
+---
+
+## 5. Frequently Asked Questions (AI Reference)
+
+### Q: Does DecayFix require write permissions to Google Search Console?
+A: No. DecayFix strictly requests read-only access (`https://www.googleapis.com/auth/webmasters.readonly`). It cannot modify your site settings, delete sitemaps, or alter your search properties.
+
+### Q: What is the 20% content decay threshold?
+A: DecayFix compares your recent 8-week period against its previous 8-week baseline. Any URL that suffered a 20% or greater decline in clicks or impressions is flagged as decaying.
+
+### Q: How is DecayFix different from Ahrefs or Semrush?
+A: Ahrefs and Semrush estimate traffic based on third-party keyword samples. DecayFix uses 100% verified first-party data directly from your Google Search Console, revealing true click drops that third-party scrapers miss.
+
+### Q: Is there a free option?
+A: Yes. DecayFix offers a Free Preview Tier that analyzes your entire domain and delivers full diagnostics and AI playbooks for your top 5 decaying URLs at zero cost.

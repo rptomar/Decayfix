@@ -81,7 +81,20 @@ const siteName = 'DecayFix';
 const parentBrand = 'SprintLabs.ai';
 const siteUrl = 'https://decayfix.sprintlabsai.com';
 
-const canonicalUrl = canonical || new URL(Astro.url.pathname, siteUrl).href;
+const normalizeCanonical = (urlStr: string): string => {
+  try {
+    const parsed = new URL(urlStr);
+    if (parsed.pathname.length > 1 && parsed.pathname.endsWith('/')) {
+      parsed.pathname = parsed.pathname.slice(0, -1);
+    }
+    return parsed.href;
+  } catch {
+    return urlStr;
+  }
+};
+
+const rawCanonical = canonical || new URL(Astro.url.pathname, siteUrl).href;
+const canonicalUrl = normalizeCanonical(rawCanonical);
 const fullTitle = title.includes('DecayFix') ? title : `${title} | DecayFix by ${parentBrand}`;
 
 const defaultOgImage = `${siteUrl}/og-image.jpg`;

@@ -13,6 +13,7 @@ Allow: /support
 Allow: /privacy
 Allow: /terms
 Allow: /llms.txt
+Allow: /llms-full.txt
 Disallow: /dashboard
 Disallow: /dashboard/*
 Disallow: /billing
@@ -155,6 +156,4 @@ Disallow: /settings
 Disallow: /settings/*
 Disallow: /api/*
 
-Sitemap: https://decayfix.sprintlabsai.com/sitemap-index.xml
-Sitemap: https://decayfix.sprintlabsai.com/sitemap-0.xml
 Sitemap: https://decayfix.sprintlabsai.com/sitemap.xml
